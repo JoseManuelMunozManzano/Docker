@@ -1,0 +1,454 @@
+DOCKERFILE
+----------
+Los archivos Dockerfile son instrucciones para construir capas.
+
+Las capas también son instrucciones del tipo crea un directorio, expón un puerto, copia archivos, añade este archivo,
+ejecuta tal comando de Linux...
+
+Al final un archivo Dockerfile sirve para indicar como construir la imagen que va a ejecutar el código.
+
+25. Cron-Ticker - Aplicación simple
+-----------------------------------
+  Dockerizar consiste en construir una imagen basado en nuestro código que corra en un contenedor.
+  Para lograr esto necesitamos crear un archivo llamado dockerfile, que es un archivo de texto con las instrucciones
+  necesarias para construir una imagen. Sería como una plantilla.
+
+  Ver el proyecto en la carpeta: 08-cron-ticker
+
+  El paquete Node Cron
+    https://www.npmjs.com/package/node-cron
+  
+  Es muy similar a como funcionan las tareas programadas. Se puede programar que cada segundo, minuto... suceda algo,
+  se ejecute un proceso...
+  Es muy utilizado para hacer procesos de sincronización.
+
+  - Vamos a la carpeta 08-cron-ticker e instalamos
+      npm i node-cron
+
+  - En este punto 25 solo se crea la aplicación usando cron.
+
+26. Dockerfile - primeros pasos
+-------------------------------
+  El programa que se ha hecho en el punto 25 se va a Dockerizar para poder hacer el docker run <NOMBRE_IMAGEN> y ya
+  estamos ejecutando el procedimiento sin preocuparme de dependencias ni de Sistemas Operativos.
+  Pero necesito decirle a Docker todo lo que necesita la aplicación para poderse ejecutar.
+
+  - Crear el archivo Dockerfile en la raiz del proyecto.
+
+  - Las imágenes que creamos van a estar basados en otra imagen. 
+    En nuestro caso va a estar basada en la imagen node:19.2-alpine3.16
+      https://hub.docker.com/_/node/tags?page=1&name=19.2-alpine3.16
+  
+  - Para indicar el punto inicial de la imagen en la que nos vamos a basar usamos FROM
+      FROM node:19.2-alpine3.16
+
+    Con esto indicamos un Sistema Operativo y la versión de Node que queremos.
+    Esta versión de Linux con Node ya viene con una carpeta llamada /app que suele
+    usarse para colocar la aplicación, aunque pueden crearse otros directorios. para ello.
+
+  - Indicamos el working directory. Es como ejecutar el comando cd app.
+    Ahora todo se ejecutará en ese directorio.
+      WORKDIR /app
+
+  - Copiamos los archivos que conforman mi aplicación. En este caso son los ficheros app.js y package.json
+    El comando es COPY y hay que indicar el source (puede haber muchos) 
+    y el dest (dentro de la imagen que estamos creando)
+      COPY app.js package.json ./
+
+    Como hemos indicado el working directory entonces el destino ./ es relativo a app.
+    Si no hubiéramos indicado working directory el destino sería /app
+
+  - Reconstruir módulos de node para poder ejecutar la app. Para ejecutar comandos se usa RUN
+    Se pueden ejecutar varios comandos en el mismo RUN separados por &&
+    Ejemplo: RUN npm install && npm install
+    RUN solo se ejecuta al construir la imagen.
+      RUN npm install
+
+  - Ejecutar el script npm run start. Esto son comandos que hay que ejecutar cada vez que se arranca
+    el contenedor.
+    Se usa CMD
+      CMD [ "node", "app.js" ]
+  
+  - Fuente Dockerfile final
+
+FROM node:19.2-alpine3.16
+
+WORKDIR /app
+
+COPY app.js package.json ./
+
+RUN npm install
+
+CMD [ "node", "app.js" ]
+
+  - Ejecución del Dockerfile para crear la imagen.
+    En la terminal, en el path donde está Dockerfile ejecutar:
+    Con --tag (o -t) se indica el nombre de la imagen.
+    Luego indicamos un punto. El punto es el path relativo a donde se encuentra el fichero Dockerfile.  
+      docker build --tag cron-ticker .
+
+  - Si hacemos un cambio al fichero Dockerfile solo hay que volver a ejecutar el build de nuevo.
+
+  - Una buena práctica es poner primero los comandos que menos cambian.
+
+  - Ejecutar el contenedor
+    docker container run cron-ticker
+
+27. Reconstruir una imagen. Versionado. Tags
+--------------------------------------------
+  - Razones para reconstruir una imagen:
+      Nos hemos equivocado en algún paso de la construcción en el Dockerfile.
+      Al realizar una actualización en nuestro proyecto.
+
+  - Solo tenemos que volver a ejecutar el build.
+      docker build --tag cron-ticker .
+
+  - Por temas de optimización (CACHE) dejamos así el fichero Dockerfile
+
+FROM node:19.2-alpine3.16
+
+WORKDIR /app
+
+COPY package.json ./
+
+RUN npm install
+
+COPY app.js ./
+
+CMD [ "node", "app.js" ]
+
+  - Y hacemos de nuevo el build
+      docker build --tag cron-ticker .
+
+  - Versionado
+    Cada vez que ejecutamos el build genera de nuevo la imagen y le pone como versión
+    el latest.
+    Las ejecuciones anteriores pasan a tener el nombre <none>
+    Para evitar esto, se puede ejecutar el build indicando la versión.
+      docker build --tag cron-ticker:1.0.0 .
+    
+    Lo más importante del versionado es tener nuestro historial de cambios.
+
+  - Obviar proceso de construcción renombrando la etiqueta. Se usa mucho.
+    Vamos a hacer conocer la versión 1.0.0 como versión jmmm
+    Si no indicamos la versión en el nombre de la imagen coge por defecto el latest.
+      docker image tag cron-ticker:1.0.0 cron-ticker:jmmm
+    
+    Veremos que se crea la imagen jmmm que apunta a la misma imagen (id) que la versión 1.0.0
+  
+    Por tanto, cuando hacemos un nuevo tag que sabemos que tenemos que mantener, lo mejor
+    es cambiarle el nombre.
+
+28. Subir imagen a Docker Hub
+-----------------------------
+  Queremos subir la imagen a un registro.
+  En Docker Hub se pueden tener x cantidad de imágenes públicas de forma gratuita.
+  Privadas puede haber una.
+
+  - Acceder a Docker Hub e ingresar en nuestra cuenta.
+      https://hub.docker.com/
+
+  - Pulsar el botón Create repository
+  - Darle un nombre al repositorio.
+      cron-ticker
+  - Dar una descripción (opcional)
+  - Indicar si la visibilidad es pública o privada.
+  - Se puede conectar a GitHub o BitBucket para automatizar procesos.
+  - Pulsar el botón Create
+  - Vemos que Docker asigna un nombre al repositorio. Es para hacer el push y subir la imagen.
+      docker push neimerc/cron-ticker:tagname
+
+  - En nuestra terminal renombramos el nombre de la imagen a la que nos ha dado Docker.
+    Vamos a subir nuestro latest.
+    Recordar que si no se indica tag por defecto es latest.
+      docker image tag cron-ticker:latest neimerc/cron-ticker
+
+  - Antes de poder hacer el push tenemos que autenticarnos.
+    En nuestra terminal escribir
+      docker login
+    
+    NOTA: Para cerrar sesión indicar
+      docker logout
+
+  - Push de la imagen
+      docker push neimerc/cron-ticker
+
+  - Volvemos a Docker Hub, recargamos el navegador web y deberíamos ver nuestra imagen subida.
+
+  - Si en Docker Hub vamos a la pestaña Settings podemos activar el escaneo de vulnerabilidades.
+
+  - Para cambiar el tag de DockerHub, en nuestra terminal cambiamos el tag de la siguiente forma:
+      docker image tag neimerc/cron-ticker:latest neimerc/cron-ticker:castor
+    
+    Y volvemos a hacer el push, ahora del nuevo tag.
+      docker push neimerc/cron-ticker:castor
+
+29. Consumir nuestra imagen de Docker Hub
+-----------------------------------------
+  Vamos a ejecutar nuestra imagen directamente de DockerHub.
+
+  - Primero eliminamos todas las imágenes de ese proyecto. Si dejamos la imagen entonces
+    va a ejecutar esa y no va a ir a DockerHub a descargarla.
+    Ejecutar en nuestro terminal.
+      docker image prune
+  
+    Vemos que este comando ha eliminado las imágenes con nombre <none>
+    Las que tienen tag siguen existiendo.
+    Para borrar todas las imágenes
+      docker image prune -a
+
+  - Vamos a Docker Hub, a la pestaña General de nuestra imagen y copiamos el nombre. 
+    En nuestra terminal ejecutamos:
+      docker container run neimerc/cron-ticker:castor
+  
+    Y vemos como descarga los layers y se ejecuta.
+
+  IMPORTANTE: La imagen se subió para la arquitectura linux/arm64/v8 (un Mac) Si esta imagen se descarga en otro tipo 
+    de arquitectura, o no funciona o entrará algún modo de compatibilidad.
+  
+30. Añadir pruebas automáticas al código
+----------------------------------------
+  El objetivo es que, cuando creemos nuestra imagen, ejecutar nuestras pruebas automáticas.
+  Si alguna prueba no pasa, no debemos construir la imagen porque hay algún problema.
+
+  En nuestro programa se ha añadido testing, que puede ejecutarse con el comando:
+    npm run test
+
+31. Incorporar testing en la construcción de la imagen
+------------------------------------------------------
+  - En el fichero Dockerfile añadimos la ejecución de los tests.
+      RUN npm run test
+
+  - Y también, en la parte del COPY copiamos todos los archivos nuevos o refactorizados.
+    Con COPY . . indicamos que copie todo lo que hay en el path y lo pegue en el working directory.
+
+    PROBLEMA GRANDE: Vamos a copiar la carpeta node_modules y todo lo que no queremos copiar.
+    Esto incrementa muchísimo el tamaño de la imagen.
+    Luego lo arreglamos con un archivo .dockerignore
+      COPY . .
+  
+  - El fichero Dockerfile queda:
+
+FROM node:19.2-alpine3.16
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+COPY . .
+RUN npm run test
+CMD [ "node", "app.js" ]
+
+  - Construimos la imagen
+      docker build -t neimerc/cron-ticker:mapache .
+
+  - Si los tests pasasn se genera la imagen. Si los tests no pasan NO se genera la imagen.
+    En este caso habrá que corregir el programa o el testing y volver a hacer el build.
+
+32. Examinar la imagen creada
+-----------------------------
+  - Montamos el contenedor
+      docker container run -d neimerc/cron-ticker:mapache
+  
+  - Acceder a la terminal del contenedor
+      docker exec -it <CONTAINER_ID> /bin/sh
+
+      docker exec -it 1fe /bin/sh
+
+  - Si vemos el contenido del contenedor veremos que tenemos muchos ficheros no necesarios.
+      ls
+
+  - Para salir ejecutar
+      exit
+  
+  Nos vamos a quedar con lo estrictamente necesario para poder ejecutar nuestra app.
+
+33. .dockerignore
+-----------------
+  Similar a .gitgnore. Dice al proceso de construcción que archivos no vamos a querer copiar.
+
+  Afecta al mandado COPY . . 
+  Para que no copie todo.
+  Por ejemplo, no queremos que copie los módulos de Node porque están especializados
+  a la máquina que está ejecutando Node.
+  Para tener los módulos es para lo que se hace el RUN npm install en el fichero Dockerfile.
+
+  - Creo el fichero .dockerignore e incluyo:
+      node_modules/
+      Dockerfile
+      .dockerignore
+      .git
+      .gitignore
+
+  - Indicar que la carpeta tests necesitamos copiarla, pero una vez pasados los tests querremos borrarla
+    porque no nos hace falta para ejecutar nuestro proyecto.
+  
+  - Volvemos a crear el build una vez tenemos nuestro fichero .dockerignore
+      docker build -t neimerc/cron-ticker:tigre .
+
+  - Y una vez creado el tag es muy buena práctica crear el latest
+      docker build -t neimerc/cron-ticker .
+
+  - Montamos el contenedor
+      docker container run -d neimerc/cron-ticker:tigre
+
+  - Acceder a la terminal del contenedor
+      docker exec -it 307 /bin/sh
+
+  - Vemos el contenido.
+      ls
+
+34. Remover archivos y carpetas de la imagen
+--------------------------------------------
+  Vamos a borrar los fuentes de testing una vez se han pasado y se ha creado la imagen.
+
+  Y para evitar tener módulos de Node de Jest, vamos a borrar los módulos de Node y
+  los vamos a reconstruir usando únicamente las dependencias de producción.
+
+  Luego veremos una solución aún mejor cuando veamos las construcciones en múltiples stages (escenarios)
+
+  - Eliminar archivos y directorios no necesarios para PRO
+    La r es de recursivo (cuidado!!) y la f para forzar el borrado sin pedir confirmación.
+      RUN rm -rf tests && rm -rf node_modules
+  
+  - Y ahora creamos los módulos necesarios para PRO (ya sin módulos de testing)
+      RUN npm install --prod
+
+  - Nuestro fichero Dockerfile queda
+
+FROM node:19.2-alpine3.16
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+COPY . .
+RUN npm run test
+RUN rm -rf tests && rm -rf node_modules
+RUN npm install --prod
+CMD [ "node", "app.js" ]
+
+  - Volvemos a crear el build
+      docker build -t neimerc/cron-ticker:pantera .
+
+  - Y una vez creado el tag es muy buena práctica crear el latest
+      docker build -t neimerc/cron-ticker .
+
+  - Montamos el contenedor
+      docker container run -d neimerc/cron-ticker:pantera
+  
+  - Y lo examinamos
+      docker exec -it f8e /bin/sh
+
+  - Vemos que no están las carpetas de testing y hay muchas menos dependencias de módulos intaladas.
+    Las de testing están vacías.
+    Sin embargo, el tamaño de la imagen HA AUMENTADO.
+    Esto es porque ahora tenemos más layers.
+    Pero hay varios pasos que podemos optimizar.
+
+35. Subir imagen a Docker Hub
+-----------------------------
+  Se suben imágenes a Docker Hub, las de tag tigre, pantera y la latest, que también apunta al mismo id que pantera.
+    docker push neimerc/cron-ticker:tigre
+    docker push neimerc/cron-ticker:pantera
+    docker push neimerc/cron-ticker
+
+  De nuevo, si queremos correr esta imagen en otra arquitectura, habría que correrla emulando la arquitectura.
+  O directamente no funciona y puede que ni de error.
+  Lo que hay que hacer es permitir que soporte varias plataformas.
+
+36. Forzar una plataforma en la construcción
+--------------------------------------------
+  Se puede indicar una plataforma de manera forzada en nuestro fichero Dockerfile.
+
+  Esto se hace en la parte del FROM del fichero Dockerfile de la siguiente manera:
+
+    FROM --platform=linux/amd64 node:19.2-alpine3.16
+  
+  Indicar que mi plataforma es arm64 (M1) y la estamos cambiando a amd64.
+  Esto es muy útil para crear una plataforma más standard.
+
+  - Construimos la imagen, directamente el latest:
+      docker build -t neimerc/cron-ticker .
+
+  - Subimos a Docker Hub
+      docker push neimerc/cron-ticker
+
+  El problema de forzar una plataforma en el fichero Dockerfile es tener que estar cambiando
+  el valor FROM cada dos por tres, y tener mucho cuidado para no equivocarnos.
+  Y de hecho, si quitamos la plataforma SUSTITUYE el latest.
+
+  Lo que vamos a ver es un proceso que construya las imágenes para distintas plataformas,
+  todas a la vez.
+
+37. Buildx
+----------
+  - Buildx sirve para construir imágenes en distintas plataformas.
+
+  - IMPORTANTE: Documentación. Ir a Getting started
+    https://docs.docker.com/build/building/multi-platform/#getting-started
+
+  - Listar builders existentes
+      docker buildx ls
+
+  - Crear un nuevo buildx
+      docker buildx create --name mybuilder --driver docker-container --bootstrap
+
+  - Si ahora ejecutamos el comando
+      docker container ls
+    
+    Vemos que aparece un contenedor con nombre buildx_builkit
+    Esto me permite utilizarlo para definir la construcción y que cree las imágenes con todas las versiones
+    y todos los sabores en una sola línea.
+    IMPORTANTE: NO DETENER ESTE CONTENEDOR PORQUE NOS HACE FALTA PARA CREAR IMAGENES!!
+
+  - Si volvemos a ejecutar
+      docker buildx ls
+    
+    Veremos nuestro builder (mybuilder)
+    Pero la que tenemos seleccionada ahora mismo es la que tiene el asterisco
+
+  - Para cambiar al buildx que hemos creado ejecutar:
+      docker buildx use mybuilder
+    
+    Y si volvemos a ejecutar docker buildx ls veremos ahora que el astericos se ha posicionado en mybuilder
+
+  - Para inspeccionar el builder seleccionado
+      docker buildx inspect
+    
+    Y entre otras cosas podemos ver todas las plataformas en las que este builder va a trabajar.
+
+  - Dockerfile nos proporciona automáticamente dos variables de entorno (BUILDPLATFORM y TARGETPLATFORM) que podemos utilizar.
+    La parte importante sería esta:
+
+      FROM --platform=$BUILDPLATFORM node:19.2-alpine3.16
+
+    Lo que estamos diciendo es que esta imagen va a depender de todas las plataformas que buildx va a proporcionar en 
+    el comando build, siempre que las soporte mi builder.
+
+    Y ahora podemos especificar las plataformas que queramos en el momento del build. Ver que hace el push de una vez.
+    Recordar ejecutar este comando donde tenemos nuestro fichero Dockerfile.
+      docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t neimerc/cron-ticker:latest --push .
+
+    Esto puede durar bastante. Y como hemos hecho el --push ya lo sube al repositorio.
+
+    Ahora podemos cambiar el tag. Como ya está en caché ya sube muy rápido.
+    Y vemos que apuntan a lo mismo. Ahora, cuando quiera bajar la imagen, Docker sabrá
+    que arquitectura es la que necesito y bajará esa.
+      docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t neimerc/cron-ticker:oso --push .
+
+38. Buildx - Construcción en múltiples arquitecturas
+----------------------------------------------------
+  Hay otra forma de, sin tener que indicar --platform=$BUILDPLATFORM en el FROM, igualmente se generen las imágenes
+  para las plataformas seleccionadas en el mandato docker buildx build --platform
+  Es decir, el FROM queda como siempre.
+    FROM node:19.2-alpine3.16
+
+  Y en el comando buildx build mandamos las plataformas en las que queremos crear la imagen.
+  Además hace el push a Docker Hub.
+   docker buildx build --platform linux/amd64,linux/arm64 -t neimerc/cron-ticker:lince --push .
+
+  De nuevo, esto puede tardar bastante.
+
+  Y no olvidar, tras subir un tag particular, volver a subir la latest.
+  Es el mismo comando sin poner tag o poniendo como tag :latest
+   docker buildx build --platform linux/amd64,linux/arm64 -t neimerc/cron-ticker --push .
+
+IMPORTANTE: Todo esto que hemos hecho, sobre todo la parte del Dockerfile, se puede refinar aún más con
+construcciones multi-stage.

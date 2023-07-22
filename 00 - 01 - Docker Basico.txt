@@ -1,0 +1,564 @@
+1. Hola Mundo en Docker
+------------------------
+  - Descargar una imagen
+    docker pull hello-world
+
+      En la respuesta indica:
+        Using default tag: latest
+      
+      En los repositorios oficiales el latest apunta a la última versión que se desplegó en el repositorio.
+
+      Pero las imágenes de terceros o que nosotros subimos, latest no significa obligatoriamente lo último.
+      Aquí es simplemente una etiqueta.
+
+    NOTA: La imagen la está obteniendo de:
+    https://hub.docker.com/_/hello-world
+
+  - Ejecución de una imagen
+    docker container run hello-world
+
+2. Borrar contenedores e imágenes
+---------------------------------
+  - Obtener ayuda de docker container
+    docker container --help
+
+  - Listado de contenedores que están corriendo
+    docker container ls
+
+  - Listado de TODOS los contenedores
+    docker container ls -a
+
+  - Borrar contenedor (por container_id o por nombre del contenedor)
+    docker container rm <CONTAINER_ID>
+    docker container rm <NAMES>
+
+    También se pueden usar SOLO los 3 primeros caracteres del CONTAINER_ID
+    Y se puede borrar más de un contenedor a la vez.
+    docker container rm cbf b42
+
+  - Borrar un contenedor de manera forzada, esto es, si está en ejecución con opción -f
+    docker container rm -f <CONTAINER_ID>
+
+    Se puede borrar más de un contenedor a la vez.
+
+  - Borrar todos los contenedores detenidos
+    docker container prune
+
+
+
+  - Obtener ayuda de docker image
+    docker images --help
+    docker image --help
+
+  - Listado de imágenes
+    docker image ls
+
+  - Eliminar imagen (por image_id o por nombre de la imagen)
+    docker image rm <IMAGE_ID>
+    docker image rm <REPOSITORY>
+
+    También se pueden usar SOLO los 3 primeros caracteres del IMAGE_ID    
+
+3. Publish and Detached modes
+-----------------------------
+  - Guía oficial de Docker
+    docker container run docker/getting-started
+
+  - Modo desenlazado de la consola (detach) se consigue con la opción -d
+    docker container run -d docker/getting-started
+
+  - Publicar (publish) el puerto 80 de mi equipo con el puerto 80 del contenedor con la opción -p
+    docker container run -d -p 80:80 docker/getting-started
+
+  - Forma corta de hacer el detach y el publish con la opción -dp    
+    docker container run -dp 8080:80 docker/getting-started
+
+    Se mapea el puerto 8080 de mi equipo con el puerto 80 que está siendo expuesto en el contenedor.
+    Esto es muy poderoso, porque puedo tener varias instancias del mismo contenedor corriendo en
+    diferentes puertos si lo necesitáramos.
+
+  - Si ahora vamos al navegador, a la ruta siguiente:
+    localhost:8080
+
+    Veremos un sitio web que está corriendo ahí. Contiene un tutorial muy útil.
+
+  - Detener contenedor en ejecución. Puede usarse el id, el nombre, o los primeros 3 caracteres del id
+    docker container ls
+    docker container stop 96e
+
+  - Arrancar contenedor detenido. Puede usarse el id, el nombre, o los primeros 3 caracteres del id
+    docker container ls -a
+    docker container start 96e
+
+4. Variables de entorno (Docker Hub)
+-----------------------------------------------------
+  Son variables que existen en el contenedor.
+  Cuando hablamos de aplicaciones de múltiples contenedores, se puede crear una variable de entorno que sea global
+  para cada uno de ellos.
+  Son muy utilizadas cuando queremos mandar cierta configuración que necesitamos para levantar un contenedor.
+
+  Se usa la opción -e ó --env seguido del nombre de la variable de entorno. 
+  Ejemplo (no ejecutar):
+    docker container run -d `-e MYSQL_DATABASE=todos` mysql:8.0
+
+  - Docker Hub
+    https://hub.docker.com/
+  
+  - Descarga (pull) de la imagen de postgres
+    Hemos ido a DockerHub, buscado postgres, seleccionado la imagen oficial:
+    https://hub.docker.com/_/postgres/tags
+
+    Hemos copiado el siguiente comando:
+    docker pull postgres  
+
+    Como no hemos indicado ningún tag, por defecto va a tomar el latest.
+
+  - ¿Cómo sabemos qué variables de entorno podemos utilizar?
+    Depende de la imagen.
+    En la documentación de la imagen lo pone.
+    https://hub.docker.com/_/postgres
+    docker container run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+
+5. Usar la imagen de Postgres
+-----------------------------
+  Todo lo que se indica está en la documentación: https://hub.docker.com/_/postgres
+
+  El usuario por defecto de una imagen de Postgres es: postgres
+  Puede cambiarse con la variable de entorno: POSTGRES_USER
+  El password se establece al crear la imagen. En nuestro ejemplo: mysecretpassword
+
+  Para poder conectarme desde SQuirreL, o TablePlus... hay que indicar un puerto de conexión entre mi
+  equipo y el contenedor.
+  Abajo vemos como conectamos el puerto 5432 de mi ordenador con el puerto 5432 que expone el contenedor.  
+  docker container run --name some-postgres -dp 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword postgres
+
+  Ahora si que vamos a poder conectarnos desde SQuirreL a este contenedor.
+  Configuración de SQuirreL:
+    Name: Postgres_Docker
+    Driver: PostgreSQL
+    URL: jdbc:postgresql://localhost:5432/
+    User Name: postgres
+    Password: mysecretpassword
+
+  Al conectar podemos crear DATABASE. Por ejemplo:
+  CREATE DATABASE pruebas
+
+  Luego podemos cambiar el URL a jdbc:postgresql://localhost:5432/pruebas
+  Para poder acceder a las tablas que creemos.
+
+  IMPORTANTE: Al borrar el contenedor toda la información de la BD se va a perder, porque la información
+  se está grabando dentro del contenedor. La forma de hacer persistente esta información es usando
+  volúmenes, cosa que se verá más adelante.
+
+6. Múltiples instancias de Postgres
+-----------------------------------
+  Vamos a tener dos instancias diferentes de Postgres corriendo en nuestro ordenador, cada instancia
+  en un puerto diferente.
+
+    docker container run \
+      --name postgres-alpha \
+      -e POSTGRES_PASSWORD=mypass1 \
+      -dp 5432:5432 \
+      postgres
+
+  Como segunda instancia, vamos a usar una versión específica de Postgres, lo cual es bueno porque el latest puede actualizarse
+  y cambiar de versión sin que nosotros realmente queramos eso.
+
+    docker container run \
+      --name postgres-beta \
+      -e POSTGRES_PASSWORD=mypass1 \
+      -dp 5433:5432 \
+      postgres:14-alpine3.17
+      
+  - Cambiar nombre al contenedor
+    Se usa la opción --name <NOMBRE>
+
+7. Logs de contenedor (MARIADB)
+-------------------------------
+  Los logs son información que la imagen dentro de nuestro contenedor esta emitiendo.
+
+  Vamos a instalar la imagen de MariaDB
+  https://hub.docker.com/_/mariadb
+  https://hub.docker.com/_/mariadb/tags
+    docker image pull mariadb:jammy
+
+  Montamos el contenedor con un password generado de forma aleatoria.
+  Usaremos los logs para buscar cual es el password.
+    docker container run \
+      -e MARIADB_RANDOM_ROOT_PASSWORD=yes \
+      -dp 3307:3306 \
+      mariadb:jammy
+
+  Para mostrar los logs actuales.
+    docker container logs <CONTAINER_ID>
+
+  Para que en tiempo real siga mostrando los logs que vaya emitiendo la imagen.
+    docker container logs --follow CONTAINER
+    docker container logs -f CONTAINER
+
+  Buscaremos el password buscando: GENERATED ROOT PASSWORD
+
+  Crearemos una sesión en SQuirreL de esta forma:
+    Name: MariaDB_Docker
+    Driver: MariaDB Driver for MySQL and MariaDB
+    URL: jdbc:mariadb://localhost:3307/
+    User Name: root
+    Password: ;<6c8i{o?o/(z*h;;t@a}wVgqzg>p^%5
+
+    NOTA: Si el password es complicado de escribir como el de arriba (no permite Cmd+V)
+      se puede dejar User Name a blancos, Password a blancos e incluirlos en la URL de esta forma:
+    
+    URL: jdbc:mariadb://localhost:3307?user=root&password=;<6c8i{o?o/(z*h;;t@a}wVgqzg>p^%5
+
+8. Ejercicio sin volúmenes - Montar BD
+--------------------------------------
+  Montar la imagen de MariaDB con el tag jammy, publicar en el puerto 3306 del contenedor con el puerto 3307 de nuestro equipo, colocarle el nombre al contenedor de world-db (--name world-db) y definir las siguientes variables de entorno:
+
+    docker container run \
+    -e MARIADB_USER=jmmm \
+    -e MARIADB_PASSWORD=1234 \
+    -e MARIADB_ROOT_PASSWORD=1234root \
+    -e MARIADB_DATABASE=world-db \
+    -dp 3307:3306 \
+    --name world-db \
+    mariadb:jammy
+
+9. Tipos de volúmenes
+---------------------
+  Hay tres tipos de volúmenes:
+  - Named Volumes
+  - Bind Volumes
+  - Anonymous Volumes
+  Ver pdf de Docker para más información.
+
+  - Crear volumen: Crea un espacio en el ordenador que va a ser persistente.
+    docker volume create world-db
+
+  - Le decimos a Docker que cierta carpeta tuya la grabas en esta carpeta de mi ordenador.
+    Y cuando vuelvas a montar la imagen dentro de un contenedor, usa ese volumen porque ahí
+    vas a tener toda la información que necesitas, ya sea mostrar la BD, configuraciones...
+
+  - Ver volúmenes
+    docker volume ls
+  
+  - Inspeccionar el path donde esta montado el volumen, su fecha de creación...
+    docker volume inspect <NOMBRE>
+
+  - Utilizar el volumen. Indicamos primero la ruta de nuestro host y luego la del contenedor, como en el puerto.
+    La ruta del contenedor aparece en la ayuda de la imagen.
+    https://hub.docker.com/_/mariadb
+    Se puede indicar --volume o -v
+
+      docker container run \
+      -e MARIADB_USER=jmmm \
+      -e MARIADB_PASSWORD=1234 \
+      -e MARIADB_ROOT_PASSWORD=1234root \
+      -e MARIADB_DATABASE=world-db \
+      -dp 3307:3306 \
+      --name world-db \
+      --volume world-db:/var/lib/mysql \
+      mariadb:jammy
+
+  - Si ahora creamos tablas y datos y luego borramos el contenedor y volvemos a montarlo con el comando anterior, 
+    veremos que seguimos teniendo la data.
+      
+      docker container ls
+      docker container rm -f 81d
+
+10. PHPMyAdmin
+--------------
+  Siempre ver la documentación para ver que tag instalar y como hacerlo.
+  https://hub.docker.com/_/phpmyadmin
+
+  - Vamos a usar este tag y la configuración la cogemos de la parte Usage with arbitrary server
+    NOTA: Aunque se vea en las documentaciones, no user --link porque desde Docker indican que ya esta deprecated.
+          Ahora se usan las redes (network) de contenedores.
+
+      docker container run \
+      --name phpmyadmin \
+      -d \
+      -e PMA_ARBITRARY=1 \
+      -p 8080:80 \
+      phpmyadmin:5.2.0-apache
+
+    Si ahora vamos al navegador y accedemos a: 
+      localhost:8080
+    
+    Veremos que accedemos a PHPMyAdmin
+
+    Para nuestras credenciales informar las que dimos de alta al crear el contenedor de MariaDB:
+      Servidor: ????
+      Usuario: jmmm
+      Contraseña: 1234
+
+    Pero no va a funcionar porque como estos dos contenedores no están en la misma red no pueden hablarse.
+    Tenemos que crear una red y meter juntos el contenedor de MariaDB y el de PHPMyAdmin.
+
+11. Redes de contenedores
+-------------------------
+  Información sobre las redes:
+    https://docs.docker.com/engine/tutorials/networkingcontainers/
+  
+  - Ver comandos que pueden utilizarse
+      docker network
+  
+  - Mostrar todas las redes
+      docker network ls
+    
+    Veremos que ya hay redes que vienen generadas por defecto. Estas no pueden borrarse.
+
+  - Eliminar todas las redes
+      docker network prune
+
+  - Crear una red
+      docker network create world-app
+
+  - Conectar a la misma red contenedor de MariaDB y de PHPMyAdmin
+      docker network connect <RED (id o nombre)>  <CONTENEDOR (id o nombre)>
+
+      Contenedor PHPMyAdmin (el orden da igual)
+        docker network connect world-app 943
+
+      Contenedor MariaDB
+        docker network connect world-app eb9
+
+  - Inspeccionar una red para ver los contenedores que hay conectados.
+    Crea DNS, con lo cual podemos identificar por nombre la BD 
+      docker network inspect <RED>
+
+      docker network inspect world-app
+
+    Volvemos al navegador, a la ruta: localhost:8080
+    Y para nuestras credenciales en PHPMyAdmin informar:
+      Servidor: world-db
+      Usuario: jmmm
+      Contraseña: 1234
+
+    Y ahora funciona perfectamente.
+
+12. Asignar la red desde la inicialización
+------------------------------------------
+  - Podemos asignar una red a un contenedor en su mismo comando de creación del contenedor usando
+    la opción --network
+
+      docker container run \
+      -e MARIADB_USER=jmmm \
+      -e MARIADB_PASSWORD=1234 \
+      -e MARIADB_ROOT_PASSWORD=1234root \
+      -e MARIADB_DATABASE=world-db \
+      -dp 3307:3306 \
+      --name world-db \
+      --volume world-db:/var/lib/mysql \
+      --network world-app \
+      mariadb:jammy
+
+
+      docker container run \
+      --name phpmyadmin \
+      -d \
+      -e PMA_ARBITRARY=1 \
+      -p 8080:80 \
+      --network world-app \
+      phpmyadmin:5.2.0-apache
+
+  - Un problema que hay cuando añadimos contenedores a un network es que desde Docker Desktop no hay una manera de ver
+    que esos contenedores tengan una relación entre si. Esto lo podremos hacer en el futuro usando Docker Compose.
+
+  - Orden de borrado de todo este tinglado puede ser:
+      Contenedores                            docker container rm -f
+      Volúmenes                               docker volume rm
+      Network                                 docker network rm
+      Imágenes (si ya no las queremos)        docker image rm
+
+13. Bind Volumes
+----------------
+  Los bind volumes nos permiten tener nuestra aplicación (estructura de archivos) y conectar todo el filesystem del host
+  con cierto filesystem de nuestro contenedor.
+
+  Vamos a acceder a la terminal interactiva del contenedor y vamos a enlazar los dos filyesystem.
+  Desde el contenedor vamos a acabar haciendo un npm install y se van a descargar todas las dependencias en el Linux
+  de nuestro contenedor y cuando esto cambie, esas dependencias se van a ver reflejadas en mi ordenador host, pero las
+  dependencias son específicas para el Linux.
+
+  Con la terminal interactiva vamos a ver todos los directorios y archivos dentro del contenedor y vamos a poder hacer 
+  cambios ahí directamente, y esos cambios se verán reflejados en mi ordenador hosting.
+  Es muy útil para poder hacer depuraciones y ver que todo está bien.
+
+  El único problema que tiene esto es que no es tan rápido como ejecutar todo el código local en nuestro equipo.
+
+14. Ejercicio. Bind Volumes
+---------------------------
+  En la carpeta 00-Proyectos/02-Bind_Volumes hay un proyecto.
+  Lo que queremos es instalar las dependencias y ejecutar este proyecto en un contenedor de Linux que está
+  corriendo una versión de Node.
+  
+  En un terminal, acceder a la carpeta del proyecto.
+  Vamos a usar una imagen de Node y en concreto la versión 16 con alpine, porque en nuestro ejemplo
+  necesitamos la versión 16 de Node.
+    https://hub.docker.com/_/node/
+  
+  - Ejecutamos el comando siguiente. 
+    Notar que estamos usando la opción -w para indicar el working directory.
+    Es como hacer un cd dentro del contenedor.
+    Cuando entremos a la terminal interactiva de nuestro contenedor podremos ir a ese directorio.
+    El puerto 80 es el que está escuchando por defecto el localhost.
+    Se usa la opción -v para usar el bind volume y decimos que vamos a enlazar nuestra ruta actual, que debería 
+    ser donde está el proyecto, con /app del contenedor (nuestro working directory)
+    Por último con el comando sh -c se ejecuta un comando (sh = shell command) en el contenedor Linux, en concreto 
+    instalamos dependencias del proyecto y lo ejecutamos.
+
+      docker container run \
+      --name nest-app \
+      -w /app \
+      -p 80:3000 \
+      -v "$(pwd)":/app \
+      node:16-alpine3.16 \
+      sh -c "yarn install && yarn start:dev"
+
+  Veremos que al ejecutarse este comando en nuestro proyecto en nuestro ordenador se genera el directorio node_modules,
+  el directorio dist, y se ejecuta el proyecto. Es decir, lo que ocurre en nuestro contenedor se ve reflejando en el
+  ordenador.
+
+  Vamos ahora al navegador a la siguiente ruta:
+    localhost/graphql
+
+  Cuando queramos detener la aplicación, tenemos que hacerlo deteniendo el contenedor:
+    docker container stop <CONTAINER_ID>
+  
+  IMPORTANTE: Si en el fichero package.json se indica el engines con una versión de node en específico a lo mejor
+    luego no admite el comando porque la versión de Node del contenedor es menor que la permitida.
+    Simplemente borrar de package.json la propiedad engines. Sería borrar algo parecido a esto:
+
+    "engines": {
+      "node": "18.x"
+    },
+
+15. Probar el enlace de directorios
+-----------------------------------
+  Tenemos que estar en la carpeta del proyecto.
+  Si se borró el contenedor, volver a ejecutar el comando:
+
+      docker container run \
+      --name nest-app \
+      -w /app \
+      -p 80:3000 \
+      -v "$(pwd)":/app \
+      node:16-alpine3.16 \
+      sh -c "yarn install && yarn start:dev"
+    
+  Iniciamos el navegador, ruta: localhost/graphql
+
+  Vamos al proyecto de nuestro ordenador, carpeta src/hello-world/hello-world.resolver.ts
+  Cambiamos en el método helloWorld() al texto: return 'Hola Mundo - desde mi equipo';
+
+  Al guardar los cambios, veremos en la terminal que se aplicaron las modificaciones.
+  Volvemos al navegador y hacemos la query y vemos que ha cambiado el resultado al nuevo
+  que hemos indicado. Recordar que estamos ejecutando la instancia de la app montada en Linux.
+
+  De nuevo si queremos salir de la app tenemos que parar el contenedor/borrarlo.
+
+  - Si queremos que se ejecute la app de manera detach se indica -dp (o -d sola)
+
+      docker container run \
+      --name nest-app \
+      -w /app \
+      -dp 80:3000 \
+      -v "$(pwd)":/app \
+      node:16-alpine3.16 \
+      sh -c "yarn install && yarn start:dev"
+  
+    Y si ahora queremos ver los logs:
+      docker container ls
+
+      docker container logs -f <CONTAINER_ID>
+
+    Y veremos los logs.
+
+    Ahora podemos cancelar el proceso con Ctrl+C, pero el contenedor sigue ejecu†ándose.
+
+16. Terminal interactiva -it
+----------------------------
+  Vamos a entrar al contenedor y hacer alguna modificación para ver como trabajar con la terminal interactiva
+  y ver como trabajar el filesystem del contenedor.
+
+  El contenedor debe estar en ejecución.
+
+  - Iniciar terminal interactiva. Hay que indicar id del contenedor y el ejecutable (bash, /bin/sh)
+    docker exec -it 859 /bin/sh
+  
+  - Ahora veremos que nos encontramos en /app, mi working directory.
+  - Escribimos cd .. y ls y veremos el filesystem de nuestro contenedor Linux.
+
+  - Si volvemos a la carpeta app y hacemos ls veremos que ahí está nuestro proyecto.
+  - Entramos a la carpeta siguiente: cd src/hello-world
+  - Editar el archivo: vi hello-world.resolver.ts
+    Y modificar: return 'Hola Mundo - desde mi contenedor';
+  - Ver el archivo: cat hello-world.resolver.ts
+
+  - En el navegador, en Apollo, si ejecutamos:
+      {
+        hello
+        todos {
+          description
+          id
+        }
+      }
+
+    Veremos que se ve el nuevo texto.
+  
+  - Y si miro en mi máquina el fuente que he tocado en el contenedor veremos que también ha cambiado
+    porque los fuentes se encuentran enlazados.
+
+  - Para salir de la interactive terminal usar el comando:
+      exit
+
+17. Laboratorio (Postgres y pgAdmin)
+-----------------------------------
+  Todos los ejercicios que vamos a hacer luego se van a simplificar muchísimo al usar Docker Compose.
+
+  1. Crear un volumen para almacenar la información de la base de datos
+    docker volume create postgres-db
+  
+  2. Montar la imagen de postgres así
+     OJO: No hay puerto publicado -p, lo que hará imposible acceder a la base de datos con SQuirreL
+    docker container run \
+    -d \
+    --name postgres-db \
+    -e POSTGRES_PASSWORD=123456 \
+    -v postgres-db:/var/lib/postgresql/data \
+    postgres:15.1
+
+  3. Tomar pgAdmin de aquí
+    docker container run \
+    --name pgAdmin \
+    -e PGADMIN_DEFAULT_PASSWORD=123456 \
+    -e PGADMIN_DEFAULT_EMAIL=superman@google.com \
+    -dp 8080:80 \
+    dpage/pgadmin4:6.17
+
+  4. Ingresar a la web con las credenciales de superman
+    http://localhost:8080/
+
+  5. Intentar crear la conexión a la base de datos
+    Click en Servers
+    Click en Register > Server
+    Colocar el nombre de: "SuperHeroesDB" (el nombre no importa)
+    Ir a la pestaña de connection
+    Colocar el hostname "postgres-db" (el mismo nombre que le dimos al contenedor)
+    Username es "postgres" y el password: 123456
+    Probar la conexión
+
+  6. Ohhh no!, no vemos la base de datos, se nos olvidó la red
+
+  7. Crear la red
+    docker network create postgres-net
+
+  8. Asignar ambos contenedores a la red
+    docker container ls
+
+  9. Conectar ambos contenedores
+    docker network connect postgres-net b39
+    docker network connect postgres-net d14
+
+  10. Intentar el paso 5. de nuevo
+    Si logra establecer la conexión, todo está correcto, proceder a crear una base de datos, schemas, tablas, insertar registros, lo que sea.

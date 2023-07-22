@@ -1,0 +1,31 @@
+39. Multi-stage build
+---------------------
+  Imaginemos este escenario en un fichero Dockerfile. Tenemos los siguientes bloques que están todos juntos:
+    - Comandos para instalar las dependencias
+    - Ejecutar test
+    - Hacer el build
+    - Ejecutar la aplicación
+  
+  Tal y como hemos estado haciendo el fichero Dockerfile, si un pequeño cambio sucede en la parte de instalar 
+  las dependencias, todo lo que sigue después de ese cambio se va a tener que volver a reconstruir, evaluar y
+  ejecutar aunque esas otras partes no han cambiado nada.
+
+  La idea del multi-stage es tomar los bloques anteriores y crear pequeñas imágenes temporales que se encargan 
+  de una sola tarea y cuyo objetivo final es construir la imagen que nosotros queremos.
+  En concreto, podemos tener las siguientes etapas:
+    - Stage con todas las dependencias (en nuestra app solo package.json)
+    - Stage con el testing y el build (suelen estar juntos porque si cambia el código tenemos que hacer el
+      testing y el build)
+    - Stage para ejecutar las dependencias de producción
+    - Stage para construir propiamente la imagen de nuestra aplicación
+
+  Estas imágenes temporales pueden compartir información, porque son independientes entre si y completamente
+  aisladas.
+  Por ejemplo, al instalar las dependencias de los paquetes de Node en el primer stage, tendremos que moverlos
+  al stage siguiente de testing y build.
+  El objetivo del build es crear la carpeta dist con nuestro código fuente. Pues esa carpeta dist la pasaremos
+  al stage siguiente de ejecución de dependencias de Pro.
+
+  Y al final, solo exportamos la última imagen, con lo que el tamaño será menor.
+
+  De esta forma, la parte que no cambia no tiene que hacer absolutamente nada, ya estén en cache y se reutilizan.

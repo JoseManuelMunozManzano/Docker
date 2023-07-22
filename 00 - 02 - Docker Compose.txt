@@ -1,0 +1,549 @@
+18. Docker Compose - Multi container apps
+-----------------------------------------
+  Docker Compose facilita mucho la vida, especialmente cuando tenemos tareas repetitivas.
+  Para ver lo que hemos hecho en esta clase, ver la carpeta 03-postgres-pgadmin-multi-container, archivo docker-compose.yml
+
+  NOTAS: Tener mucho cuidado con espacios y tabulaciones en archivos yml porque significan
+  diferentes cosas según estén o no tabulados.
+    Dentro del mismo nivel de indentación el orden de los comandos es indiferente.
+    Docker Compose puede leer los valores de un fichero de variables de entorno.
+
+  - Siempre comenzamos con la versión de docker compose.
+    Esto le dice a Docker que comandos va a poder utilizar y como funcionan.
+    En este momento la última versión es la 3.
+      version: '3'
+
+  - Todas las instrucciones que pongamos estarán dentro de los servicios
+      services:
+
+  - Nombre del contenedor para poder hacer referencia dentro de la red que Docker Compose va a crear automáticamente por nosotros.
+        db:
+          container_name: postgres_database
+  
+  - La imagen a usar.
+          image: postgres:15.1
+
+  - El volumen
+          volumes:
+            - postgres-db:/var/lib/postgresql/data
+  - Variables de entorno:
+          environment:
+            - POSTGRES_PASSWORD=123456
+
+  - Ahora el otro contenedor pgAdmin. Como sabemos que para poder usar pgAdmin la BD debe estar arriba,
+    pgAdmin depende de la BD. Se indica el nombre del servicio del que depende.
+        pgAdmin:
+          depends_on:
+            - db
+
+  - Indicamos la imagen de pgAdmin
+          image: dpage/pgadmin4:6.17
+
+  - Exposición del puerto. Primero el de nuestro ordenador y luego el del contenedor.
+    Si hubiera más puertos se indican hacia abajo.
+          ports:
+            - "8080:80"
+            - "otro_puerto_mi_ordenador:puerto_contenedor"
+            - "otro_puerto_mi_ordenador:puerto_contenedor"
+
+  - Variables de entorno
+          environment:
+            - PGADMIN_DEFAULT_PASSWORD=123456 
+            - PGADMIN_DEFAULT_EMAIL=superman@google.com
+  
+  - Volumen de pgAdmin: Como no lo vamos a indicar, todo lo que hagamos se va a perder cuando se baje el contenedor.
+
+  - Para el tema del volumen del service db, es importante lo siguiente:
+    Al crear un volumen con nombre (postgres-db) hay dos posibilidades:
+      - Que Docker Compose automáticamente me cree el volumen.
+      - Utilizar un volumen existente.
+    Las dos configuraciones son diferentes, pero el cambio es muy sutil.
+
+      Tal y como está aquí abajo, no definiendo nada tras el nombre del volumen, decimos
+      a Docker Compose que lo crea.
+      volumes:
+        postgres-db:
+      
+      Pero nosotros NO queremos crear un volumen nuevo, queremos usar el volumen que creamos en el punto 17 y conectarlo.
+      Para ello queremos usar el externo:
+        volumes:
+          postgres-db:
+            external: true
+              
+
+  - Nuestro Docker Compose queda así:
+
+version: '3'
+
+services:
+  db:
+    container_name: postgres_database
+    image: postgres:15.1
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=123456
+
+  pgAdmin:
+    depends_on:
+      - db
+    image: dpage/pgadmin4:6.17
+    ports:
+      - '8080:80'
+    environment:
+      - PGADMIN_DEFAULT_PASSWORD=123456
+      - PGADMIN_DEFAULT_EMAIL=superman@google.com
+
+volumes:
+  postgres-db:
+    external: true
+
+  - Ejecución: En la terminal, donde esta nuestro proyecto ejecutar:
+      Ayuda:
+        docker compose --help
+      
+      Ejecutar:
+        docker compose up
+
+  - Acceder al navegador a la ruta:
+      localhost:8080
+  
+    E ingresar a la web con las credenciales de Superman:
+      superman@google.com
+      123456
+
+    Intentar crear la conexión a la base de datos
+      Click en Servers
+      Click en Register > Server
+      Colocar el nombre de: "HeroesDB" (el nombre no importa)
+      Ir a la pestaña de connection
+      Colocar el hostname "postgres_database" (el mismo nombre que le dimos al contenedor)
+      Username es "postgres" y el password: 123456
+      Probar la conexión
+
+  - Si algo fallara y tenemos que tocar el fichero docker-compose, es fácil que tengamos que recrearlo todo.
+    Para ello lo primero es hacer Ctrl+C para salir de la ejecución y luego:
+
+      docker compose down
+    
+    Este comando remueve los contenedores y la red. No borra los volúmenes.
+
+19. Bind Volumes - Docker Compose
+---------------------------------
+  Ver el archivo docker-compose.yml de la carpeta 04-postgres-pgadmin-bind-volumes
+
+  Lo que vamos a hacer es mapear este lugar donde se graba la información y quiero hacer
+  un bind volume hacia mi ordenador, hacia un directorio en mi proyecto.
+
+  Indicamos mi host (./), relativo al path donde esta el archivo docker-compose.yml, y podemos indicar el path completo, y el volumen 
+  del contenedor Docker.
+  
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+  
+  También eliminamos la parte volumes y el external.
+
+  El comando dentro del archivo docker-compose.yml queda:
+
+version: '3'
+
+services:
+  db:
+    container_name: postgres_database
+    image: postgres:15.1
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=123456
+
+  pgAdmin:
+    depends_on:
+      - db
+    image: dpage/pgadmin4:6.17
+    ports:
+      - '8080:80'
+    environment:
+      - PGADMIN_DEFAULT_PASSWORD=123456
+      - PGADMIN_DEFAULT_EMAIL=superman@google.com
+
+  - Para ejecutar el archivo docker-compose en el terminal:
+      docker compose up
+
+  - Veremos que en la carpeta de nuestro proyecto se crea la carpeta postgres. Todo lo que se guarde en el contenedor, en la ruta /var/lib/postgresql/data 
+  va a estar reflejado y enlazado en nuestro ordenador, en nuestro proyecto, en la carpeta postgres
+
+  Esto es muy útil en desarrollo, para no tener que estar creando volúmenes, y el manejo es muy sencillo.
+
+  Volvemos al navegador a la ruta: localhost:8080 y hacemos la misma conexión que el punto 18.
+
+  Si en el terminal pulso Ctrl+C para bajarlo, ejecuto docker compose down, veremos que nuestra carpeta postgres sigue existiendo
+  en nuestro ordenador. Nuestra información es persistente.
+
+  - Ahora en la parte del service pgAdmin también podemos crear un volumen enlazado a nuestro ordenador.
+    La parte del contenedor Docker la podemos sacar de la información de Docker Hub o de la imagen que tenemos en Docker Desktop.
+
+      volumes:
+        - ./pgadmin:/var/lib/pgadmin
+
+  - El contenido del fichero docker-compose.yml queda así:
+
+version: '3'
+
+services:
+  db:
+    container_name: postgres_database
+    image: postgres:15.1
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=123456
+
+  pgAdmin:
+    depends_on:
+      - db
+    image: dpage/pgadmin4:6.17
+    ports:
+      - '8080:80'
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    environment:
+      - PGADMIN_DEFAULT_PASSWORD=123456
+      - PGADMIN_DEFAULT_EMAIL=superman@google.com
+
+  - Para ejecutar el archivo docker-compose en el terminal en modo detach:
+      docker compose up -d
+    
+  - Y para ver logs con cambios:
+      docker compose logs -f
+  
+  - Veremos que se crea en nuestro ordenador, en la carpeta del proyecto, el directorio pgadmin
+
+  - Ahora la información de pgAdmin también es persistente. Para comprobarlo, generemos de nuevo la conexión al server como en el punto 18
+  y luego ejecutemos:
+    docker compose down
+
+  - Volvemos a levantar todo
+    docker compose up
+
+  - Indicamos usuario y contraseña
+      superman@google.com
+      123456
+
+  - Entramos a pgAdmin y vemos que existe el server que creamos antes.
+    Ya no tenemos que crear la cadena de conexión. La configuración es persistente.
+
+  - Cuando ya no queramos el proyecto solo tenemos que eliminar las carpetas pgAdmin y postgres de nuestro ordenador.
+
+20. Multi-container app - Base de datos Mongo
+---------------------------------------------
+  Este ejercicio lleva desde el punto 20 al 23 y consiste en hacer un multicontenedor con una BD, una forma de acceder a ella
+  y un backend.
+
+  https://hub.docker.com/_/mongo
+
+  Ver el proyecto 05-multi-container con mongo
+  Hemos creado en esa carpeta el fichero docker-compose.yml y el fichero .env para variables de entorno.
+
+  El fichero docker-compose ya viene preparado para leer variables de entorno del fichero .env que se encuentre en la misma ruta.
+
+  Los puertos no son necesarios y se ponen temporalmente, porque solo queremos que la aplicación y los que están en la red puedan ver la BD,
+  no el mundo exterior. Luego se quitan.
+
+  El comando restart: always es útil cuando estamos trabajando con aplicaciones de múltiples contenedores.
+  Si algúna imagen se cae o necesitamos volverla a levantar el contenedor se reinicia si se detiene.
+
+ - La configuración básica queda (recordar que los puertos habrá que quitarlos):
+
+version: '3'
+
+services:
+  db:
+    container_name: pokemon_db
+    image: mongo:6.0
+    volumes:
+      - poke-vol:/data/db
+    ports:
+      - 27018:27017
+    restart: always
+
+volumes:
+  poke-vol:
+    external: false
+
+  - Para levantar nuestro contenedor:
+      docker compose up
+
+  - Para hacer la limpieza:
+      docker compose down
+
+21. Variables de entorno - MongoDB
+----------------------------------
+  Hay varias formas para obligar que las conexiones hacia la BD estén autenticadas con un usuario. Lo vamos a hacer usando variables
+  de entorno de Mongo.
+
+  Si vamos al Docker Hub de Mongo y buscamos auth veremos que podemos ejecutar el comando --auth cuando se levanta
+  la BD con el comando mongod --auth, Esto se hace, en nuestro Docker Compose:
+
+    command: ['--auth']
+
+  Esto hace que necesitemos algún tipo de autenticación para hacer consultas a nuestra BD.
+
+  El fichero docker-compose.yml queda:
+
+version: '3'
+
+services:
+  db:
+    container_name: pokemon_db
+    image: mongo:6.0
+    volumes:
+      - poke-vol:/data/db
+    ports:
+      - 27018:27017
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: jmmunoz
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    command: ['--auth']
+
+volumes:
+  poke-vol:
+    external: false
+
+  - IMPORTANTE: La parte de la autorización se ejecuta cuando se inicializa la BD.
+  Como nuestra BD ya se inicializó (se asoció al volumen) en el punto 20 ejecutar este docker-compose.yml no va a funcionar.
+  Hay que eliminar el volumen:
+    docker compose down
+    docker volume ls
+    docker volume rm 05-multi-containerconmongo_poke-vol
+
+  - Ejecutamos y nos aseguramos que se crea el volumen:
+      docker compose up -d
+
+  - Autenticación:
+      mongodb://jmmunoz:123456@localhost:27018
+
+  - Para crear variables de entorno en el fichero .env, para poder referenciarlas en nuestro fichero docker-compose.yml
+
+    En fichero .env crear las variables de entorno:
+      MONGO_USERNAME=jmmunoz
+      MONGO_PASSWORD=123456
+      MONGO_DB_NAME=pokemonDB
+    
+  - Y nuestro fichero docker-compose.yml queda así:
+version: '3'
+
+services:
+  db:
+    container_name: ${MONGO_DB_NAME}
+    image: mongo:6.0
+    volumes:
+      - poke-vol:/data/db
+    ports:
+      - 27018:27017
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    command: ['--auth']
+
+volumes:
+  poke-vol:
+    external: false
+
+  - No olvidar hacer el docker compose down, eliminar el volumen y volver a levantar con docker compose up
+
+22. Multi-container app - Visor de BD
+-------------------------------------
+  Ver el proyecto 06-multi-container con mongo-express
+
+  Vamos a coger esta imagen para poder acceder a los datos:
+    https://hub.docker.com/_/mongo-express
+  
+  Mongo express es un servidor basado en Node que nos va a permitir hacer interacciones con la BD.
+  Usa una versión muy antigua de Bootstrap pero es muy útil.
+  Es como una sustitución de MongoDB Compass.
+
+  Las variables de entorno, como siempre, aparecen en la documentación de Docker Hub. Son:
+
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${MONGO_DB_NAME}
+  
+  Sobre ME_CONFIG_MONGODB_SERVER, indicar que es el nombre que hemos puesto al contenedor del servicio db,
+  que corresponde al nombre de DNS siempre y cuando se encuentre en la misma red.
+
+  El fichero docker-compose.yml queda:
+
+version: '3'
+
+services:
+  db:
+    container_name: ${MONGO_DB_NAME}
+    image: mongo:6.0
+    volumes:
+      - poke-vol:/data/db
+    ports:
+      - 27018:27017
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    command: ['--auth']
+
+  mongo-express:
+    depends_on:
+      - db
+    image: mongo-express:1.0.0-alpha.4
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${MONGO_DB_NAME}
+    ports:
+      - 8080:8081
+    restart: always
+
+volumes:
+  poke-vol:
+    external: false
+
+  - Para ejecutar:
+      docker compose down
+      docker compose up -d
+  
+  - Acceder al navegador, a la ruta:
+      localhost:8080
+
+  - NOTA: Como el service db expone el puerto, desde MongoDB Compass puedo seguir accediendo
+  a los datos. No es necesario exponer los puertos de la BD si los únicos que van a usar la BD es la imagen de mongo-express y 
+  nuestra aplicación.
+  Entre menos cosas haya expuestas (más aislados), más seguro va a ser el trabajo en nuestros contenedores.
+
+  Nuestro fichero docker-compose.yml queda:
+
+version: '3'
+
+services:
+  db:
+    container_name: ${MONGO_DB_NAME}
+    image: mongo:6.0
+    volumes:
+      - poke-vol:/data/db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    command: ['--auth']
+
+  mongo-express:
+    depends_on:
+      - db
+    image: mongo-express:1.0.0-alpha.4
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${MONGO_DB_NAME}
+    ports:
+      - 8080:8081
+    restart: always
+
+volumes:
+  poke-vol:
+    external: false
+
+  - Para ejecutar:
+      docker compose down
+      docker compose up -d
+  
+  - Acceder al navegador, a la ruta:
+      localhost:8080
+
+  - Y ya no podemos acceder desde MongoDB Compass.
+
+23. Multi-container app - Aplicación de Nest
+--------------------------------------------
+  Ver el proyecto 07-multi-container app Nest
+
+  Esta parte sería el backend que se conecta a la BD y hace el procesamiento.
+  https://hub.docker.com/r/klerith/pokemon-nest-app
+
+  Es mejor tener una aplicación que se encargue del backend y después se actualiza el frontend o el backend si es necesario.
+
+  En esta parte se añade el service poke-app y nuestro archivo docker-compose.yml queda:
+
+version: '3'
+
+services:
+  db:
+    container_name: ${MONGO_DB_NAME}
+    image: mongo:6.0
+    volumes:
+      - poke-vol:/data/db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    command: ['--auth']
+
+  mongo-express:
+    depends_on:
+      - db
+    image: mongo-express:1.0.0-alpha.4
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${MONGO_DB_NAME}
+    ports:
+      - 8080:8081
+    restart: always
+
+  poke-app:
+    depends_on:
+      - db
+      - mongo-express
+    image: klerith/pokemon-nest-app:1.0.0
+    ports:
+      - 3000:3000
+    environment:
+      MONGODB: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_DB_NAME}:27017
+      DB_NAME: ${MONGO_DB_NAME}
+    restart: always
+
+volumes:
+  poke-vol:
+    external: false
+
+  - Para ejecutar:
+      docker compose down
+      docker compose up -d
+
+  - Acceder al navegador, a la ruta:
+      localhost:8080
+
+  - Y vemos que aparece automáticamente la base de datos pokemonDB
+
+  - Podemos ahora ejecutar para cargar datos: http://localhost:3000/api/v2/seed
+
+  - Y para verlos: http://localhost:3000/api/v2/pokemon?limit=20&offset=40
+
+24. Limpieza
+------------
+  - Borrar contenedores
+      docker compose down
+
+  - Borrar volumen
+      docker volume ls
+      docker volume rm 05-multi-containerconmongo_poke-vol 06-multi-containerconmongo-express_poke-vol 07-multi-containerappnest_poke-vol
+
+  - Comprobar la red y borrar lo que no se use
+      docker network ls
+      docker network rm <CONTAINER_ID>
+
+  - Comprobar las imágenes y borrar lo que no se use
+      docker image ls
+      docker image rm
+      docker image rm 900 3cc 202 8d4 d05 447 bae
+
+  - Comprobar el build (aquí no hay que hacer nada)
+      docker buildx ls
