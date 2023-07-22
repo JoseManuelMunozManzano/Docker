@@ -29,3 +29,73 @@
   Y al final, solo exportamos la última imagen, con lo que el tamaño será menor.
 
   De esta forma, la parte que no cambia no tiene que hacer absolutamente nada, ya estén en cache y se reutilizan.
+
+40. Proyecto
+------------
+  Vamos a seguir el proyecto en la carpeta: 09-cron-ticker-multi-stage
+
+41. Multi-State Build (o Multi-Stage Build)
+-------------------------------------------
+  - Documentación:
+      https://phoenixnap.com/kb/docker-add-vs-copy
+      https://docs.docker.com/engine/reference/builder/#copy
+
+    Se aconseja más trabajar con COPY para evitar efectos secundarios.
+
+  - Nuestro primer stage instala dependencias y va a ser conocido como deps.
+    Fichero Dockerfile queda así:
+
+FROM node:19.2-alpine3.16 as deps
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+
+  - Nuestra segundo stage va a testear y construir la app y lo vamos a llamar builder
+    Si el testing falla ya no sigue con los siguientes stages.
+    Debajo de lo anterior, en nuestro fichero Dockerfile, añadimos:
+
+FROM node:19.2-alpine3.16 as builder
+WORKDIR /app
+# Copiamos del stage deps los node_modules al stage builder en la carpeta ./node_modules
+COPY --from=deps /app/node_modules ./node_modules
+# Dest /app
+COPY . .
+# Realizar testing
+RUN npm run test
+# Aquí haríamos para construir la app optimizada para producción:
+# RUN npm run build
+# Pero no hace falta porque en nuestra app no tenemos ese script.
+
+  - El tercer stage crear las dependencias de producción.
+    Debajo de lo anterior, en nuestro fichero Dockerfile, añadimos:
+
+FROM node:19.2-alpine3.16 as prod-deps
+WORKDIR /app
+COPY package.json ./
+RUN npm install --prod
+
+  - El cuarto stage ejecuta la aplicación y lo llamaremos runner
+    Debajo de lo anterior, en nuestro fichero Dockerfile, añadimos:
+
+FROM node:19.2-alpine3.16 as runner
+WORKDIR /app
+COPY --from=prod-deps /app/node_modules ./node_modules
+# Copiar los fuentes que necesito
+# Si tuviese una carpeta dist con los fuentes ya optimizados, copiaría solo ese directorio.
+COPY app.js ./
+COPY tasks ./tasks
+# Ejecutar comandos cuando se inicia un contenedor
+CMD [ "node", "app.js" ]
+
+  - Creamos la imagen usando nuestro fichero Dockerfile
+      docker build --tag neimerc/cron-ticker:perro .
+
+  - Y el latest
+      docker build --tag neimerc/cron-ticker:latest .
+
+  - Montamos el contenedor
+      docker container run neimerc/cron-ticker
+
+42. Subir la imagen a Docker Hub
+--------------------------------
+

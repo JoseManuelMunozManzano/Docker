@@ -414,6 +414,12 @@ CMD [ "node", "app.js" ]
     
     Y entre otras cosas podemos ver todas las plataformas en las que este builder va a trabajar.
 
+  - Eliminar un builder. Tenemos que cambiar a otro builder y luego borrarlo.
+    NO BORRARLO TODAVÍA!!
+      docker buildx use desktop-linux
+      docker buildx rm mybuilder
+
+
   - Dockerfile nos proporciona automáticamente dos variables de entorno (BUILDPLATFORM y TARGETPLATFORM) que podemos utilizar.
     La parte importante sería esta:
 
