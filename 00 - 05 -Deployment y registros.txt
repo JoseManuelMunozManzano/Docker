@@ -10,7 +10,7 @@
   - Desplegar la imagen, y esto lo vamos a hacer de dos maneras. Uno en Docker Hub y luego vamos a tener
     un registro, que sería como un espejo de Docker Hub pero privado y en plataformas como Digital Ocean, Azure...
 
-48 - Construcción de imagen - Múltiples arquitecturas
+49 - Construcción de imagen - Múltiples arquitecturas
 -----------------------------------------------------
   Vamos a seguir trabajando en el proyecto 10-teslo-shop
 
@@ -47,3 +47,35 @@
   - Eliminamos el builder. Tenemos que cambiar a otro builder y luego borrarlo.
       docker buildx use desktop-linux
       docker buildx rm mybuilder
+
+50 - Tablas en Markdown
+-----------------------
+  Este punto es para Docker Hub, para crear un README usando Markdown.
+
+  - Documentación de la sintaxis de Markdown
+      https://www.markdownguide.org/basic-syntax/
+
+  - Acceder a Docker Hub y a nuestra imagen teslo-shop, en la pestaña general
+      https://hub.docker.com/repository/docker/neimerc/teslo-shop/general
+
+  - Donde aparece el texto Repository Overview pulsar Edit.
+
+  - Vamos a usar una tabla. Cuando escribamos esto pulsamos el botón Update. También podemos
+    pulsar en Preview para ver como va quedando.
+
+# TesloShop Backend
+
+| Variable de entorno | Ejemplo | Descripción |
+| --- | --- | --- |
+APP_VERSION | 1.0.1 | Versión de la aplicación
+STAGE | prod | prod, dev, staginng
+DB_PASSWORD | my_password | Password de la BD Postgres
+DB_NAME | TesloDB | Nombre de la BD
+DB_HOST | TesloDB | Host donde se encuentra la BD
+DB_PORT | 5432 | Puerto de la BD
+DB_USERNAME | postgres | Usuario de la BD
+PORT | 3000 | Puerto donde corre la aplicación http
+HOST_API | http://localhost:3000/api | Path donde se encuentra el api
+JWT_SECRET | my_secret | Secret de nuestros JWTs
+
+  - Para ver como la gente lo verá pulsamos el botón Public View
