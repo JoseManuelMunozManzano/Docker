@@ -148,3 +148,41 @@ CMD [ "node", "app.js" ]
 ---------------------------------
   Vamos a mezclar el docker compose con el build del Dockerfile.
 
+  Ver dentro del proyecto los ficheros Dockerfile y docker-compose.yml
+
+  - Se ha informado esta parte dentro del docker-compose
+
+app:
+  volumes:
+    - .:/app/
+  container_name: nest-app
+  ports:
+    - ${PORT}:${PORT}
+  environment:
+    APP_VERSION: ${APP_VERSION}
+    STAGE: ${STAGE}
+    DB_PASSWORD: ${DB_PASSWORD}
+    DB_NAME: ${DB_NAME}
+    DB_HOST: ${DB_HOST}
+    DB_PORT: ${DB_PORT}
+    DB_USERNAME: ${DB_USERNAME}
+    PORT: ${PORT}
+    HOST_API: ${HOST_API}
+    JWT_SECRET: ${JWT_SECRET}
+
+  - Y ahora lo queremos ejecutar para levantar un contenedor.
+      docker compose up
+    
+    Y vemos que da el siguiente error:
+      service "app" has neither an image nor a build context specified: invalid compose project
+
+    Este error es porque con docker compose levantamos un contenedor, pero es que NO TENEMOS IMAGEN.
+    Lo que necesitamos hacer es que, al ejecutar docker-compose, haga un paso similar a este del fichero Dockerfile
+
+FROM node:19-alpine3.15 as builder
+WORKDIR /app
+COPY --from=dev-deps /app/node_modules ./node_modules
+COPY . .
+RUN yarn build
+
+CMD [ "node","dist/main.js"]
