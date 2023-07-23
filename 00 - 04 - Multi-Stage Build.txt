@@ -299,3 +299,101 @@ CMD [ "yarn","start:dev"]
 
   - Echamos abajo nuestro docker compose cuando hayamos acabado
       docker compose down --volumes
+
+47. Generar production build
+----------------------------
+  - Ver la siguiente documentación
+      https://docs.docker.com/compose/production/
+  
+  - Vamos a nuestro proyecto, al fichero .env y hacemos el siguiente cambio:
+      STATE=prod
+
+  - Y vamos a nuestro fichero docker-compose.yml y hacemos el siguiente cambio:
+      target: ${STAGE}
+
+    Pero tener en cuenta que el valor prod es también el del alias del Dockerfile para generar la imagen de producción!
+
+  - El inconveniente es que no vamos a querer crear los bindVolumes porque cuando se haga
+    el build de producción no necesitamos ningún mapeo.
+    Pero para temas de desarrollo posterior necesitaríamos condicionar la parte de los volumes en el fichero docker-compose.yml
+
+    Distintas soluciones serían:
+
+    * Para hacer condiciones en shell scripts mirar esta documentación:
+      https://www.digitalocean.com/community/tutorials/if-else-in-shell-scripts
+    La pena es que esta documentación no sirve para los docker-compose.
+
+    * Si miramos la primera documentación: https://docs.docker.com/compose/production/
+    veremos que hay un comando:
+      docker compose -f docker-compose.yml -f production.yml up -d
+    
+    Tras el primer -f indicamos la base del docker-compose y tras el segundo -f
+    indicamos las configuraciones adicionales que vamos a ocupar para sobreescribir
+    lo que indique el primer -f (docker-compose.yml en este caso)
+
+    Es un poco lioso
+
+    * Crear otro fichero docker-compose, por ejemplo
+        docker-compose.prod.yml
+
+      Exclusivamente para producción.
+      Para ello copiamos nuestro fichero docker-compose.yml y le ponemos al nuevo ese nombre.
+
+      Ahora vamos a docker-compose.prod.yml y quitamos todo lo que no necesitamos para
+      el build de producción, que es básicamente quitar la parte volumes del services app.
+
+    - Hacer el build de producción para construir la imagen.
+        docker compose -f docker-compose.prod.yml build
+
+    - Levantamos el contenedor.
+        docker compose -f docker-compose.prod.yml up
+
+    - Vemos las imágenes
+        docker image ls
+      
+      Veremos que aparecen imágenes con nombre <none>
+      Podemos hacer que nuestro docker-compose nos ayude con los nombres de las imágenes.
+    
+    - Indicamos en el fichero docker-compose.prod.yml el nombre de la imagen.
+      Será el nombre de la imagen de nuestro Docker Hub y le hemos puesto el tag 2.0.0
+      que irá cambiando conforme evolucione la app.
+
+services:
+  app:
+    build:
+      context: .
+      target: ${STAGE}
+      dockerfile: Dockerfile
+
+    image: neimerc/teslo-shop-backend:2.0.0
+    ...
+
+    - Volvemos a hacer el build de producción para construir la imagen.
+        docker compose -f docker-compose.prod.yml build
+
+      Si vemos las imágenes (docker image ls) veremos que los nombres ya son correctos.
+
+    - Levantamos el contenedor.
+        docker compose -f docker-compose.prod.yml up
+
+    - Y como estos mandatos NO son evidentes, los anotamos en el README.md de nuestro proyecto.
+
+# Production notes:
+
+Ejecutar este comando
+
+```
+docker compose -f docker-compose.prod.yml build
+```
+
+  - Por último, si vemos de nuevo nuestro fichero docker-compose.prod.yml veremos que
+  para el service db no hacemos nada, solo usamos la imagen base de postgres.
+    No tiene sentido construir el service db junto a la app.
+
+    Es considerada una buena práctica que nuestros contenedores sean autosuficientes y realicen 
+    una tarea en específico.
+
+    Con docker-compose podemos decirle específicamente que construya un servicio en particular.
+
+  - Volvemos a hacer el build de producción para construir la imagen, pero solo el service app
+        docker compose -f docker-compose.prod.yml build app
