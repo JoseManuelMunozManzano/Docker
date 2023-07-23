@@ -1,0 +1,15 @@
+48 - Deployments y registros - Introducción
+-------------------------------------------
+  Para desplegar la imagen vamos a necesitar la BD y tenemos que aprovisionarla en algún servicio 
+  como Digital Ocean, Azure, AWS...
+  Luego nuestra imagen de Teslo-Shop la vamos a conectar a esa BD mediante variables de entorno.
+  Vamos a hacer protecciones a la BD (solo ciertas direcciones IP o solo conexiones internas). Entre
+  menos puntos de acceso tenga nuestra BD menos posibilidades de que nos hackeen.
+
+  Lo que vamos a hacer en esta sección es:
+  - Desplegar la imagen, y esto lo vamos a hacer de dos maneras. Uno en Docker Hub y luego vamos a tener
+    un registro, que sería como un espejo de Docker Hub pero privado.
+
+48 - Construcción de imagen - Múltiples arquitecturas
+-----------------------------------------------------
+  Vamos a seguir trabajando con el proyecto 10-teslo-shop
