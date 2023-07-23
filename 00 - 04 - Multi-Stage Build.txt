@@ -93,9 +93,58 @@ CMD [ "node", "app.js" ]
   - Y el latest
       docker build --tag neimerc/cron-ticker:latest .
 
-  - Montamos el contenedor
+  - Montamos el contenedor y vemos si funciona.
       docker container run neimerc/cron-ticker
 
-42. Subir la imagen a Docker Hub
---------------------------------
+  - Subir imagenes
+      docker push neimerc/cron-ticker:perro
+      docker push neimerc/cron-ticker:perro
+
+42. Build con otras arquitecturas
+---------------------------------
+  De nuevo vamos a usar buildx para construir nuestra imagen en varias arquitecturas.
+  Para más documentación ver 00 - 03 - Dockerfile.txt, puntos 37 y 38.
+
+  - Ver los builders disponibles.
+      docker buildx ls
+
+  - Crear un nuevo buildx
+      docker buildx create --name mybuilder --driver docker-container --bootstrap
+
+  - Para cambiar al buildx que hemos creado:
+      docker buildx use mybuilder
+
+  - Crear la imagen en las distintas plataformas
+      docker buildx build --platform linux/amd64,linux/arm64 -t neimerc/cron-ticker:gato --push .
+
+  - Inspeccionar la imagen para ver las diferentes plataformas creadas
+      docker buildx imagetools inspect neimerc/cron-ticker:gato
+  
+  - No olvidar el latest
+      docker buildx build --platform linux/amd64,linux/arm64 -t neimerc/cron-ticker --push .
+
+  - Eliminar el builder. Tenemos que cambiar a otro builder y luego borrarlo.
+      docker buildx use desktop-linux
+      docker buildx rm mybuilder
+
+43. Nuevo Proyecto
+------------------
+  Vamos a seguir el proyecto de la carpeta: 10-teslo-shop
+
+  - En el punto en el que está solo hay que levantarlo de la siguiente manera (ver README.md)
+      docker compose up -d
+      yarn start:dev
+
+  - Ejecutar el seed
+      http://localhost:3000/api/seed
+  
+  - Ver la información en Swagger
+      http://localhost:3000/api
+  
+  - Para terminar echar abajo el docker compose
+      docker compose down
+
+44. Docker compose - Target State
+---------------------------------
+  Vamos a mezclar el docker compose con el build del Dockerfile.
 
