@@ -128,6 +128,9 @@ volumes:
     
     Este comando remueve los contenedores y la red. No borra los volúmenes.
 
+    Para borrar también los volúmenes:
+      docker compose down --volumes
+
 19. Bind Volumes - Docker Compose
 ---------------------------------
   Ver el archivo docker-compose.yml de la carpeta 04-postgres-pgadmin-bind-volumes

@@ -1,3 +1,12 @@
+FROM node:19-alpine3.15 as dev
+WORKDIR /app
+COPY package.json ./
+RUN yarn install
+# El comando a ejecutar puede ponerse aquí o en docker-compose.yml
+# Lo vamos a dejar aquí porque en el paso de desarrollo SIEMPRE vamos a querer ejecutarlo
+CMD [ "yarn","start:dev"]
+
+
 
 FROM node:19-alpine3.15 as dev-deps
 WORKDIR /app

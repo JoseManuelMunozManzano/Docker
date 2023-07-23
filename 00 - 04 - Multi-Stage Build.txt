@@ -131,6 +131,8 @@ CMD [ "node", "app.js" ]
 ------------------
   Vamos a seguir el proyecto de la carpeta: 10-teslo-shop
 
+  La idea de este proyecto es mezclar el docker compose con el build del Dockerfile.
+
   - En el punto en el que está solo hay que levantarlo de la siguiente manera (ver README.md)
       docker compose up -d
       yarn start:dev
@@ -142,12 +144,10 @@ CMD [ "node", "app.js" ]
       http://localhost:3000/api
   
   - Para terminar echar abajo el docker compose
-      docker compose down
+      docker compose down --volumes
 
 44. Docker compose - Target State
 ---------------------------------
-  Vamos a mezclar el docker compose con el build del Dockerfile.
-
   Ver dentro del proyecto los ficheros Dockerfile y docker-compose.yml
 
   - Se ha informado esta parte dentro del docker-compose
@@ -186,3 +186,92 @@ COPY . .
 RUN yarn build
 
 CMD [ "node","dist/main.js"]
+
+45. Ejecutar partes específicas del Dockerfile
+----------------------------------------------
+  Lo que queremos es seguir desarrollando nuestra app, en concreto, ejecutar usando Docker
+  nuestro yarn start:dev
+  NO QUEREMOS TODAVIA GENERAR UNA IMAGEN DE PRODUCCION!
+
+  - Se ha borrado de nuestro proyecto la carpeta dist y la carpeta node_modules.
+
+  - Se añade al fichero docker-compose, en el service app de arriba, lo siguiente:
+
+    * context: es donde se va a buscar el archivo Dockerfile
+    * target: del Dockerfile que parte va a ejecutar
+    * dockerfile: es el nombre del fichero Dockerfile. Puede haber más de uno (dev, prod...)
+      También puede haber más de un docker-compose.yml
+      Aunque lo que estamos viendo es mejor, porque vamos a poder ejecutar solo ciertos
+      segmentos de nuestro Dockerfile.
+    * command: El comando a ejecutar. Puede estar aquí o en Dockerfile
+      Lo vamos a dejar en el Dockerfile.
+    * Se añade un nuevo volumen porque vamos a construir los node_modules usando nuestro 
+      fichero Dockerfile y tenemos que mapearlos.
+
+app:
+  build:
+    context: .
+    target: dev
+    dockerfile: Dockerfile
+
+    # command: yarn start:dev
+    volumes:
+      - .:/app/
+      - /app/node_modules
+    
+    ...
+  
+  - Y en nuestro archivo Dockerfile, como hemos dicho que no queremos generar la imagen de producción
+    vamos a crear una nueva layer cuya misión es ejecutar yarn start:dev
+    Ver que arriba hemos hecho referencia en el target al alias dev de aquí.
+    NOTA: Ver como generamos los módulos de Node y por eso tuvimos que mapearlos en el paso anterior.
+
+FROM node:19-alpine3.15 as dev
+WORKDIR /app
+COPY package.json ./
+RUN yarn install
+# El comando a ejecutar puede ponerse aquí o en docker-compose.yml
+# Lo vamos a dejar aquí porque en el paso de desarrollo SIEMPRE vamos a querer ejecutarlo
+CMD [ "yarn","start:dev"]
+
+  - Construir la imagen de desarrollo
+      docker compose build
+    
+    Con este comando ejecutamos el docker-compose y la parte del fichero Dockerfile etiquetada como dev.
+
+    Se ha debido de crear la imagen 
+      10-teslo-shop-app:latest
+  
+  - Levantar nuestro contenedor
+      docker compose up
+
+    Esto vuelve a generar las carpetas dist y node_modules, que parece que están vacíos, 
+    pero es porque realmente están en nuestra imagen.
+
+    Sin embargo, vemos que el comando falla porque no puede encontrar la BD.
+    En concreto está rechazando la conexión a 127.0.0.1, que es el localhost del contenedor.
+    Pero es que la BD no está en el contenedor de la app.
+    La BD esta en su propio contenedor que se llama TesloDB.
+
+    Si nos vamos a nuestras variables de entorno, fichero .env veremos que el DB_HOST es localhost.
+    Lo cambiamos a TesloDB, que es el entorno que necesito.
+
+  - Con la variable de entorno DB_HOST corregido, volvemos a levantar nuestro contenedor
+      docker compose up
+
+    Ahora vemos que ya no falla
+  
+  - Vamos al navegador web
+      localhost:3000/api
+    
+    Y deberíamos ver el Swagger.
+
+  - Pulsamos Ctrl+C para salir del proyecto
+  
+  - Y siempre que queramos podemos volver a hacer el buid
+      docker compose build
+
+  Lo que vamos a hacer luego es tomar las instrucciones del fichero docker-compose.yml y generar
+  el build de producción basado en una variable de entorno.
+  Es decir, en el fichero .env existe una variable llamada STAGE con valor dev.
+  Lo que haremos es cambiar ese valor a prod.
