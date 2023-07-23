@@ -205,8 +205,10 @@ CMD [ "node","dist/main.js"]
       segmentos de nuestro Dockerfile.
     * command: El comando a ejecutar. Puede estar aquí o en Dockerfile
       Lo vamos a dejar en el Dockerfile.
-    * Se añade un nuevo volumen porque vamos a construir los node_modules usando nuestro 
+    * Se añade un nuevo volumen anónimo porque vamos a construir los node_modules usando nuestro 
       fichero Dockerfile y tenemos que mapearlos.
+      El host no tendrá nada, es anónimo, es decir, la carpeta node_modules en
+      nuestra máquina estará vacía.
 
 app:
   build:
@@ -271,7 +273,29 @@ CMD [ "yarn","start:dev"]
   - Y siempre que queramos podemos volver a hacer el buid
       docker compose build
 
+  - Echamos abajo nuestro docker compose cuando hayamos acabado
+      docker compose down --volumes
+
+  Para el punto 47.
   Lo que vamos a hacer luego es tomar las instrucciones del fichero docker-compose.yml y generar
   el build de producción basado en una variable de entorno.
   Es decir, en el fichero .env existe una variable llamada STAGE con valor dev.
   Lo que haremos es cambiar ese valor a prod.
+
+46. Probar el BindVolume desde el compose
+-----------------------------------------
+  - Levantamos nuestro docker compose
+      docker compose up
+
+  - Recordar que el bind volume evita que toda esa capa se mantenga en cache.
+
+  - Indicar que para hacer el desarrollo es mejor evitar el bind volumes hasta donde sea posible.
+  
+  - Los bind volumes son muy útiles cuando tenemos node-sass o sass y todo funciona bien en 
+    nuestra máquina pero cuando lo pasamos a producción o una imagen de Linux no funciona.
+    Estos bind volumes son muy útiles para hacer esas pruebas.
+
+  - Pulsamos Ctrl+C para salir del proyecto
+
+  - Echamos abajo nuestro docker compose cuando hayamos acabado
+      docker compose down --volumes
