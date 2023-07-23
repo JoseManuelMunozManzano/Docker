@@ -8,8 +8,42 @@
 
   Lo que vamos a hacer en esta sección es:
   - Desplegar la imagen, y esto lo vamos a hacer de dos maneras. Uno en Docker Hub y luego vamos a tener
-    un registro, que sería como un espejo de Docker Hub pero privado.
+    un registro, que sería como un espejo de Docker Hub pero privado y en plataformas como Digital Ocean, Azure...
 
 48 - Construcción de imagen - Múltiples arquitecturas
 -----------------------------------------------------
-  Vamos a seguir trabajando con el proyecto 10-teslo-shop
+  Vamos a seguir trabajando en el proyecto 10-teslo-shop
+
+  Primero vamos a crear la imagen en distintas arquitecturas. Para ello usaremos buildx.
+
+  - Listar builders existentes
+      docker buildx ls
+
+  - Crear un nuevo buildx
+      docker buildx create --name mybuilder --driver docker-container --bootstrap
+
+  - Para cambiar al buildx que hemos creado ejecutar:
+      docker buildx use mybuilder
+
+  - Acceder a Docker Hub e ingresar en nuestra cuenta.
+      https://hub.docker.com/
+  - Pulsar el botón Create repository
+  - Darle un nombre al repositorio.
+      teslo-shop
+  - Dar una descripción (opcional)
+  - Indicar si la visibilidad es pública o privada.
+  - Se puede conectar a GitHub o BitBucket para automatizar procesos.
+  - Pulsar el botón Create
+
+  - Creamos las imágenes en las distintas plataformas. Recordar que el push ya sube a Docker Hub.
+      docker buildx build --platform linux/amd64,linux/arm64 -t neimerc/teslo-shop:1.0.0 --push .
+
+  - Igual para el latest
+      docker buildx build --platform linux/amd64,linux/arm64 -t neimerc/teslo-shop --push .
+
+  - Una vez hemos terminado de crear la imagen en las plataformas echamos abajo el contenedor
+      docker container rm -f 5eb
+
+  - Eliminamos el builder. Tenemos que cambiar a otro builder y luego borrarlo.
+      docker buildx use desktop-linux
+      docker buildx rm mybuilder
