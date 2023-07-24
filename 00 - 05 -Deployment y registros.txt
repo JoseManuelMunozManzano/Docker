@@ -79,3 +79,61 @@ HOST_API | http://localhost:3000/api | Path donde se encuentra el api
 JWT_SECRET | my_secret | Secret de nuestros JWTs
 
   - Para ver como la gente lo verá pulsamos el botón Public View
+
+51 - Prueba de la imagen creada
+-------------------------------
+Vamos a trabajar en el proyecto 11-teslo-testing
+
+  - Creamos de nuevo el fichero docker-compose.yml
+    Vemos que se indica la imagen de Docker Hub que ya hemos subido anteriormente.
+
+version: '3'
+
+services:
+  app:
+    # siempre indicar un tag
+    image: neimerc/teslo-shop:1.0.0
+    depends_on:
+      - db
+    restart: always
+    container_name: teslo-backend
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      APP_VERSION: ${APP_VERSION}
+      STAGE: ${STAGE}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      PORT: ${PORT}
+      HOST_API: ${HOST_API}
+      JWT_SECRET: ${JWT_SECRET}
+
+  db:
+    image: postgres:14.3
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    container_name: ${DB_NAME}
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+
+volumes:
+  postgres-db:
+    external: false
+
+  - Levantamos nuestro contenedor:
+      docker compose up
+
+  - Vamos al navegador web y escribimos
+      localhost:3000/api
+    
+    Y veremos el Swagger
+
+  Se va a hacer ahora el aprovisionamiento para desplegar la BD en la nube, para poder decirle
+  después a nuestra imagen cual es la cadena de conexión de la BD.
