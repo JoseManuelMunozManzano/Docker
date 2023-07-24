@@ -1,0 +1,10 @@
+GITHUB ACTIONS
+
+01 - Construcciones automáticas
+-------------------------------
+  GitHub Actions nos permite crear un pipeline, una serie de procesos que vamos a poder ejecutar en secuencia
+  para llegar a un objetivo en particular.
+
+  Código --> Dockerfile --> GitHub --> Action --> Determina el tag --> Build en GitHub --> Push a un registro private en DockerHub
+
+  Y todo esto se hace a partir de un commit.

@@ -137,3 +137,11 @@ volumes:
 
   Se va a hacer ahora el aprovisionamiento para desplegar la BD en la nube, para poder decirle
   después a nuestra imagen cual es la cadena de conexión de la BD.
+
+52 - Digital Ocean - Aprovisionamiento de BD
+--------------------------------------------
+  https://www.digitalocean.com/
+
+  Vamos a aprovisionar una BD Postgres para que nosotros, mediante nuestras variables de entorno, podamos conectar nuestra imagen.
+
+  Esto no lo voy a hacer, al menos por ahora (clases 85 a 94 de la Sección 7)
