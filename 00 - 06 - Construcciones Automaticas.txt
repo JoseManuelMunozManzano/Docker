@@ -224,3 +224,29 @@ jobs:
   - Y vamos al navegador a la ruta
       localhost:3000/graphql
   - Podemos borrar la imagen
+
+09 - Renombrar Latest
+---------------------
+  Queremos renombrar nuestra imagen para que nuestra última etiqueta siempre sea el latest.
+
+  - De nuevo en nuestro repositorio, vamos a editar el archivo .github/workflows/docker-image.yml
+    Solo cambiamos nuestros steps para genera el build y el push y el fuente de esos dos steps queda así:
+
+- name: Build Docker Image
+  run: |
+    docker build -t neimerc/docker-graphql:0.0.2 .
+    docker build -t neimerc/docker-graphql:latest .
+    
+- name: Push Docker Image
+  run: |
+    docker push neimerc/docker-graphql:0.0.2
+    docker push neimerc/docker-graphql:latest
+
+  - Pulsamos en Commit changes
+  - Pulsamos Commit changes
+  - Si vamos a las actions veremos que se está ejecutando la acción.
+  - Una vez ejecutada podemos pulsar en ella y luego en build y veremos como se va ejecutando la acción.
+  - Si ahora vamos a DockerHub veremos que ha creado la imagen con el tag 0.0.2 y el latest
+
+  - PROBLEMA DE TODO ESTO: Tenemos que cambiar manualmente, en el archivo .github/workflows/docker-image.yml
+    el release tag.
