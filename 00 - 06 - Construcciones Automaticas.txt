@@ -8,3 +8,21 @@ GITHUB ACTIONS
   Código --> Dockerfile --> GitHub --> Action --> Determina el tag --> Build en GitHub --> Push a un registro private en DockerHub
 
   Y todo esto se hace a partir de un commit.
+
+02 - Inicio de proyecto
+-----------------------
+  Vamos a trabajar con el proyecto 12-graphql-actions
+
+  - Ejecutamos para instalar dependencias
+      yarn install
+  - Ejecutamos para echar a andar el proyecto
+      yarn start:dev
+  - Vamos a la ruta
+      localhost:3000/graphql
+
+  - Una vez vista un poco la ejecución de la app, borrar las carpetas
+      node_modules
+      dist
+
+  La idea es, mediante un comando git (commit), lanzar el procedimiento de construcción de nuestra imagen y llevarla a DockerHub.
+  También vamos a hacer que maneje el versionamiento semántico por nosotros. 
