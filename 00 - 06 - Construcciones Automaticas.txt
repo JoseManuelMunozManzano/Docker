@@ -250,3 +250,95 @@ jobs:
 
   - PROBLEMA DE TODO ESTO: Tenemos que cambiar manualmente, en el archivo .github/workflows/docker-image.yml
     el release tag.
+
+10 - Versionamiento semántico automático
+----------------------------------------
+  - Vamos a usar una acción personalizada para generar un versionamiento semántico automático.
+    Documentación:
+      https://github.com/marketplace/actions/git-semantic-version?version=v4.0.3
+
+  - Vamos a la web de la documentación y pulsamos donde indica en verde Use v4.0.3
+  - Aparecerá una mini ventana. Copiamos el snippet.
+      - name: Git Semantic Version
+      uses: PaulHatch/semantic-version@v4.0.3
+
+  - De nuevo en nuestro repositorio, vamos a editar el archivo .github/workflows/docker-image.yml
+    Notar que hemos comentado los dos últimos steps para que no tarde mucho el action.
+    Solo estamos interesados en ver como genera el versionamiento.
+    El fuente queda así:
+  
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: Git Semantic Version
+      uses: PaulHatch/semantic-version@v4.0.3
+      with:
+        major_pattern: "major:"
+        minor_pattern: "feat:"
+        format: "${major}.${minor}.${patch}-prerelease${increment}"
+      id: version
+    
+    - name: Docker Login
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        NEW_VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        echo "New version: $NEW_VERSION!!!!!!!!!!"
+    
+#     - name: Build Docker Image
+#       run: |
+#         docker build -t neimerc/docker-graphql:0.0.2 .
+#         docker build -t neimerc/docker-graphql:latest .
+        
+#     - name: Push Docker Image
+#       run: |
+#         docker push neimerc/docker-graphql:0.0.2
+#         docker push neimerc/docker-graphql:latest
+
+  - Pulsamos en Commit changes
+  - Pulsamos Commit changes
+  - Si vamos a las actions veremos que se está ejecutando la acción.
+  - Una vez ejecutada podemos pulsar en ella y luego en build y luego en en paso Docker login
+    y veremos el echo de la New version con la versión generada.
+      New version: 0.0.1-prerelease7!!!!!!!!!!
+
+  - Para cambiar un minor_pattern, hacer cualquier cambio en nuestro proyecto desde Github.
+    Por ejemplo, coger nuestro package.json y editarlo. 
+    Cambiar:
+      "version": "1.1.1-rc-11",
+    Hacer el commit y en el descriptivo indicar:
+      feat: Una nueva opción agregada
+  - Si vamos a las actions veremos que se está ejecutando la acción.
+  - Una vez ejecutada podemos pulsar en ella y luego en build y luego en en paso Docker login
+    y veremos el echo de la New version con la versión generada y se ha cambiado la minor version.
+      New version: 0.1.0-prerelease0!!!!!!!!!!
+
+  - Para cambiar un major_pattern, hacer cualquier cambio en nuestro proyecto desde Github.
+    Por ejemplo, coger nuestro package.json y editarlo. No hace falta cambiar nada. 
+    Cambiar:
+      "version": "1.1.1-rc-12",
+    Hacer el commit y en el descriptivo indicar:
+      major: Nueva versión completamente nueva
+  - Si vamos a las actions veremos que se está ejecutando la acción.
+  - Una vez ejecutada podemos pulsar en ella y luego en build y luego en en paso Docker login
+    y veremos el echo de la New version con la versión generada y se ha cambiado la major version.
+      New version: 1.0.0-prerelease0!!!!!!!!!!    
