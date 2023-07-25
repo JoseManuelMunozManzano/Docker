@@ -111,7 +111,58 @@ GITHUB ACTIONS
       docker build -t neimerc/docker-graphql:0.0.1 .
 
   - Y para probarlo creamos el contenedor
-      docker container run -d neimerc/docker-graphql:0.0.1
+      docker container run -p 3000:3000 neimerc/docker-graphql:0.0.1
   
   - Y vamos al navegador a la ruta
       localhost:3000/graphql
+  
+  - Una vez vemos que funciona podemos borrar el contenedor.
+
+07 - Github Actions - Steps
+---------------------------
+  Queremos hacer usando Github Actions lo que hemos hecho en el punto 06 en nuestro ordenador.
+
+  - Vamos a editar, en nuestro contenedor de Github, el archivo .github/workflows/docker-image.yml
+
+  - Cualquier edición en ese archivo va a disparar el procedimiento de reconstrucción y la acción
+    de Github Actions.
+
+    NOTA: También podemos hacer cambios en ese fichero en local, en nuestro ordenador, y al hacer
+    el push al repositorio lanzaría la acción.
+  
+  - Lo editamos y el fuente queda así:
+
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Docker login
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        echo "Iniciando login"
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        echo "Fin del login"
+
+  - Pulsamos en Commit changes y como texto indicamos: Login step in place
+  - Pulsamos Commit changes
+  - Si vamos a las actions veremos que se está ejecutando la acción.
+  - Una vez ejecutada podemos pulsar en ella y luego en build y luego en en paso Docker login
+    y veremos los echo y los logs.
