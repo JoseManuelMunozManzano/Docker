@@ -50,3 +50,33 @@ GITHUB ACTIONS
 
   - Solo para ir viendo, en Github, en nuestro repositorio del proyecto, pulsamos en la pestaña Actions  
   - Debemos ver Docker image By Github Actions
+
+04 - Configurar credenciales - Github Secrets
+---------------------------------------------
+  - En Github, en el repositorio de nuestro proyecto pulsar el botón Settings    
+  - Pulsar en Secrets and variables
+  - Pulsar en Actions
+  - Vamos a crear Repository secrets. Son variables ocultas que solo Github va a conocer. Una vez las creemos
+    ni nosotros mismos vamos a poder verlas de nuevo.
+    Las llaves que vamos a querer grabar es mi nombre de usuario de Dockerhub
+
+    Para ello pulsar el botón New repository secret y la secret es:
+      DOCKER_USER
+    Y el valor será el nombre de nuestro usuario en DockerHub.
+    Cuando indiquemos el valor pulsamos el botón Add secret
+
+    Pulsamos de nuevo el botón New repository, y la segunda secret es:
+      DOCKER_PASSWORD
+    Y de nuevo indicaremos el valor (un token de acceso creado en DockerHub) y pulsaremos el botón Add secret.
+
+    Para crear el Token en DockerHub, en nuestra cuenta de DockerHub acceder a Account Settings, luego a
+    Security y pulsar el botón New Access Token e indicamos un descriptivo, en nuestro caso
+    Github-Actions. Daremos los permisos Read & Write. Pulsamos el botón Generate.
+    Nos saldrá un token y lo copiamos porque una vez salgamos ya no lo vamos a poder volver a ver.
+    Ese token es como un password.
+
+    IMPORTANTE: Los nombres de las keys podrían haber sido otros, no obligatoriamente esos.
+
+  - Volvemos a DockerHub y creamos un repositorio. Lo vamos a hacer privado esta vez.
+    Le damos el nombre: 
+      docker-graphql
