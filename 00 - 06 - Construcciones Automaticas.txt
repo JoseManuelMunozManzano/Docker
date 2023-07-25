@@ -26,3 +26,27 @@ GITHUB ACTIONS
 
   La idea es, mediante un comando git (commit), lanzar el procedimiento de construcción de nuestra imagen y llevarla a DockerHub.
   También vamos a hacer que maneje el versionamiento semántico por nosotros. 
+
+03 - Github - Repositorio de proyecto
+-------------------------------------
+  Nos llevamos el proyecto 12-graphql-actions a un repositorio aparte para poder trabajar con los Github Actions.
+
+  - El repositorio es este:
+      https://github.com/JoseManuelMunozManzano/docker-actions
+
+  - En nuestro ordenador también me he llevado el proyecto a otra carpeta (00-Proyectos - GitHubActions)
+  - Abrimos el proyecto en VSCode y nos vamos a la terminal
+  - Iniciamos git
+      git init
+  - Tomamos el proyecto y lo llevamos al staging
+      git add .
+  - Hacemos el commit
+      git commit -m "First commit"
+
+  - Pegamos los comandos que nos indica Github en nuestra terminal y ejecutamos para hacer el push
+      git remote add origin https://github.com/JoseManuelMunozManzano/docker-actions.git
+      git branch -M main
+      git push -u origin main
+
+  - Solo para ir viendo, en Github, en nuestro repositorio del proyecto, pulsamos en la pestaña Actions  
+  - Debemos ver Docker image By Github Actions
