@@ -342,3 +342,67 @@ jobs:
   - Una vez ejecutada podemos pulsar en ella y luego en build y luego en en paso Docker login
     y veremos el echo de la New version con la versión generada y se ha cambiado la major version.
       New version: 1.0.0-prerelease0!!!!!!!!!!    
+
+11 - Tag automático
+-------------------
+  Vamos a configurar el tag de DockerHub para que se haga de forma automática.
+
+  - De nuevo en nuestro repositorio, vamos a editar el archivo .github/workflows/docker-image.yml
+    Notar que hemos descomentado los dos últimos steps de nuevo para que cree la imagen.
+    El fuente queda así:
+
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: Git Semantic Version
+      uses: PaulHatch/semantic-version@v4.0.3
+      with:
+        major_pattern: "major:"
+        minor_pattern: "feat:"
+        format: "${major}.${minor}.${patch}-prerelease${increment}"
+      id: version
+    
+    - name: Docker Login
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}        
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD        
+    
+    - name: Build Docker Image
+      env:
+        NEW_VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        docker build -t neimerc/docker-graphql:$NEW_VERSION .
+        docker build -t neimerc/docker-graphql:latest .
+        
+    - name: Push Docker Image
+      env:
+        NEW_VERSION: ${{ steps.version.outputs.version }}    
+      run: |
+        docker push neimerc/docker-graphql:$NEW_VERSION
+        docker push neimerc/docker-graphql:latest
+
+  - Pulsamos en Commit changes
+  - Pulsamos Commit changes
+  - Si vamos a las actions veremos que se está ejecutando la acción.
+  - Una vez ejecutada podemos pulsar en ella y luego en build y veremos como se va ejecutando la acción.
+  - Si ahora vamos a DockerHub veremos que ha creado la imagen y el tag estará acorde a la nueva versión
+    semántica que generó nuestro código basada en la acción que usamos de versionamiento automático.
