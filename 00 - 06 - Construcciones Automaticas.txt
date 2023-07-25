@@ -166,3 +166,61 @@ jobs:
   - Si vamos a las actions veremos que se está ejecutando la acción.
   - Una vez ejecutada podemos pulsar en ella y luego en build y luego en en paso Docker login
     y veremos los echo y los logs.
+
+08 - Step - Construir imagen
+----------------------------
+  Aunque podemos escribir todos los comandos en el mismo step del archivo 
+  .github/workflows/docker-image.yml, lo ideal es separarlo en diferentes steps.
+
+  Nos falta el build y el push.
+
+  - De nuevo en nuestro repositorio, vamos a editar el archivo .github/workflows/docker-image.yml
+    Creamos el step Build Docker Image donde vemos que, por ahora, está todo hardcodeado y 
+    el step Push Docker Image.
+    El fuente queda así:
+
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Docker Login
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+    
+    - name: Build Docker Image
+      run: |
+        docker build -t neimerc/docker-graphql:0.0.2 .
+        
+    - name: Push Docker Image
+      run: |
+        docker push neimerc/docker-graphql:0.0.2
+
+  - Pulsamos en Commit changes y como texto indicamos: Build and Push
+  - Pulsamos Commit changes
+  - Si vamos a las actions veremos que se está ejecutando la acción.
+  - Una vez ejecutada podemos pulsar en ella y luego en build y veremos como se va ejecutando la acción.
+  - Si ahora vamos a DockerHub veremos que ha creado la imagen.
+  - Si ahora vamos a nuestro terminal podemos ejecutar, para usar esa imagen recien creada en la nube:
+      docker container run -p 3000:3000 neimerc/docker-graphql:0.0.2
+  - Y vamos al navegador a la ruta
+      localhost:3000/graphql
+  - Podemos borrar la imagen
