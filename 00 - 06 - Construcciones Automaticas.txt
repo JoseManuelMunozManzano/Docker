@@ -80,3 +80,38 @@ GITHUB ACTIONS
   - Volvemos a DockerHub y creamos un repositorio. Lo vamos a hacer privado esta vez.
     Le damos el nombre: 
       docker-graphql
+    Y pulsamos el botón Create.
+
+05 - Primeros pasos de Github Actions
+-------------------------------------
+  - En nuestro repositorio de Github, pulsar en Actions y buscar Docker image.
+    Nos interesa la que en su descripción indica: 
+      Build a Docker image to deploy, run, or push to a registry.
+
+  - Una vez encontrado pulsar el botón Configure y veremos un fichero llamado docker-image.yml
+
+    NOTA: Sobre GitHub Actions ver en mi Github el repositorio
+      https://github.com/JoseManuelMunozManzano/udemy-gh-07-containers
+    Y todos los demás repositorios cuyo nombre empiece por: udemy-gh
+  
+  - Pulsamos el botón Start commit o Commit changes
+    Con esto, en nuestro repositorio se crea una carpeta oculta .github/workflows que contiene 
+    el fichero docker-image.yml
+  
+  - Automáticamente intentará ejecutar la acción (pulsar en Actions) y fallará (se puede cancelar)
+    La idea es simplemente implementarlo, no que funcione todavía.
+
+06 - Crear imagen
+-----------------
+
+  - En nuestro proyecto de nuestro ordenador, en nuestro Dockerfile ya tenemos todo el procedimiento
+    de construcción.
+
+  - Para hacer el build de la imagen con el nombre: neimerc/docker-graphql:0.0.1
+      docker build -t neimerc/docker-graphql:0.0.1 .
+
+  - Y para probarlo creamos el contenedor
+      docker container run -d neimerc/docker-graphql:0.0.1
+  
+  - Y vamos al navegador a la ruta
+      localhost:3000/graphql
