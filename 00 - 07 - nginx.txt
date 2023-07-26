@@ -25,3 +25,29 @@ Nginx
     un sitio web (index.html) con un código js (en React)
 
     Lo que nosotros debemos desplegar es esa carpeta dist y la carpeta assets
+
+02 - nginx - DockerHub
+----------------------
+  - Ir a DockerHub y buscar la imagen oficial de nginx
+      https://hub.docker.com/_/nginx
+  
+    Es la imagen más descargada de DockerHub.
+    Aunque sirve para muchas cosas nosotros la vamos a usar como un hosting.
+    Esto es porque estamos buscando que nuestra aplicación del frontend y nuestro backend
+    estén en servidores aislados e independientes.
+    De esa manera, si queremos hacer un cambio en el backend lo hacemos solo en el backend
+    e igual para la parte de frontend.
+    Así nos ahorramos momentos en los que la aplicación no va a estar disponible, etc.
+
+  - Descargar la imagen y hacer correr el contenedor con este comando que aparece en la 
+    documentación de la imagen indicada arriba.
+      docker run --name some-nginx -d -p 8080:80 nginx:1.23.3
+
+  - Para ver la ejecución de nginx ir al navegador, a la ruta
+      localhost:8080
+
+  - Dejar la imagen corriendo, porque en el siguiente punto vamos a ver lo que hay
+    en el siguiente path del contenedor
+      /usr/share/nginx/html
+    
+    Ese path es el volumen, en el cual compartimos nuestro contenido con el servidor web nginx.
