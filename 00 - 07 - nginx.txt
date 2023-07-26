@@ -163,3 +163,81 @@ CMD [ "nginx", "-g", "daemon off;" ]
 
   - Pulsamos Ctrl+C para cancelar la ejecución del contenedor.
   - Borramos el contenedor.
+
+04 - nginx config
+-----------------
+  En un SPA todos los URLs están siendo controlados por nuestra app de React.
+  Todas las URLs deben ser manejadas por el index.html que se encuentra en nuestra carpeta /dist.
+  Esto hay que configurarlo en nuestro contenedor de nginx.
+
+  La configuración se encuentra, dentro de nuestro contenedor de nginx, a la carpeta /etc/nginx/conf.d
+
+  - Levantamos un contenedor de nginx (no es el de nuestra app)
+      docker container run nginx:1.23.3
+
+  - Entramos a la terminal de nuestro contenedor
+      docker exec -it ab4 bash
+
+  - Vamos a la ruta
+      cd /etc/nginx/conf.d
+
+  - Vemos el default.conf y lo copiamos
+      cat default.conf
+
+  - Vamos a nuestro proyecto en VSCode
+  - Creamos una nueva carpeta en la raiz del proyecto llamada nginx
+  - Dentro creamos un archivo llamado nginx.conf
+  - Pegamos el contenido copiado del archivo default.conf
+  - Nos vamos a la parte de location / y añadimos al final la parte try_files, quedando así
+
+    Lo que decimos es que no importa que url sea, siempre lo va a responder al index.html
+    para que el React Router lo interprete.
+    Esto funciona para cualquier aplicación SPA, da igual que sea React, Angular, Vue...
+      try_files $uri $uri/ /index.html;
+    
+      location / {
+          root   /usr/share/nginx/html;
+          index  index.html index.htm;
+          try_files $uri $uri/ /index.html;
+      }
+
+    Podemos tener diferentes configuraciones para desarrollo, testeo...
+
+  - ¿Como sustituyo ahora la configuración de un contenedor nginx por la mía?
+    Borraremos el fichero default.conf y en el proceso de contrucción de la IMAGEN meteremos esta configuración.
+    El nombre nginx.conf (en vez de default.conf) también vale porque se busca automáticamente, al igual que default.conf.
+
+    La parte de prod del Dockerfile queda así:
+
+FROM nginx:1.23.3 as prod
+EXPOSE 80
+COPY --from=builder /app/dist /usr/share/nginx/html
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.conf /etc/nginx/conf.d
+
+  - Nos salimos de la terminal del contenedor
+      exit
+
+  - Borramos el contenedor
+
+  - Volvemos a construir la imagen usando nuestro Dockerfile modificado.
+    Usamos el no_cache por motivos de estudio, pero no haría falta ponerlo siempre.
+      docker build -t heroes-app . --no-cache
+
+  - Cuando termine podemos ver la imagen creada
+      docker image ls
+
+    Y debemos ver nuestra imagen heroes-app
+
+  - Ejecutemos la aplicación usando nuestra imagen
+    Vamos a dejar los logs porque me interesa verlos
+      docker container run -p 80:80 heroes-app
+
+  - Vamos al navegador web y escribimos
+      localhost
+
+  - Pulsamos el botón login y NO VEMOS NUESTRAS IMAGENES
+    Pero ahora, si recargamos el navegador web, ya funciona correctamente.
+
+  - Pulsamos Ctrl+C para cancelar la ejecución del contenedor.
+  - Borramos el contenedor.
