@@ -17,5 +17,6 @@ Ver los siguientes .txt para poder seguir este curso en el orden indicado:
 - 00 - 04 - Multi-Stage Build.txt
 - 00 - 05 -Deployment y registros.txt
 - 00 - 06 - Construcciones automáticas.txt
+- 00 - 07 - nginx.txt
 
 En estos documentos de texto se van indicando sus proyectos asociados.

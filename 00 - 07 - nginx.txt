@@ -1,0 +1,27 @@
+Nginx
+
+01 - Inicio de Proyecto - SPA nginx
+-----------------------------------
+  - Vamos a trabajar en el proyecto SPA de React siguiente
+      13-react-heroes
+
+    En este proyecto no hay nada del lado del servidor.
+    Nginx es muy útil para desplegar sitios estáticos.
+
+  - Vamos a ver el funcionamiento del proyecto.
+  - Ir a la terminal y a nuestro proyecto.
+  - Instalar dependencias
+      yarn
+  - Montar el localhost en el puerto 3000
+      yarn dev
+  - Ejecutar el navegador y acceder a la ruta
+      localhost:3000
+  - Pulsamos en el botón login y entramos a nuestra app.
+
+  - De nuevo en nuestro terminal, para hacer el build y generar la carpeta dist
+      yarn build
+
+    Si entramos a la carpeta build veremos que no hay nada de Node, sino básicamente
+    un sitio web (index.html) con un código js (en React)
+
+    Lo que nosotros debemos desplegar es esa carpeta dist y la carpeta assets
