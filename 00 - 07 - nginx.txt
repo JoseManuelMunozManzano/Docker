@@ -51,3 +51,51 @@ Nginx
       /usr/share/nginx/html
     
     Ese path es el volumen, en el cual compartimos nuestro contenido con el servidor web nginx.
+
+03 - Inspeccionar nginx
+-----------------------
+  Con el contenedor de nginx corriendo, vamos a entrar con la terminal interactiva para examinar
+  esa estructura de directorios.
+
+  - Entrar a la terminal del contenedor
+      docker exec -it a88 bash
+  
+  - Ya dentro del contenedor, acceder a la ruta siguiente
+      cd usr/share/nginx/html
+  
+  - Ver los archivos
+      ls
+
+    Veremos que hay dos archivos:
+      * 50x.html : Lo que mostraremos si hay un error interno del servidor. Hay una configuración
+        interna dentro de nginx que dice que errores se quieren manejar y si ocurre uno de esos
+        errores se indica que archivo .html queremos regresar.
+      * index.html : Ver su contenido con el comando 
+          cat index.html
+        Si hacemos un cambio en ese archivo y recargamos el navegador veremos esos cambios.
+        Es como un Apache, un hosting.
+        Es donde sirve los archivos por defecto. Se puede cambiar, pero es muy común que se
+        despliegue dentro de esta carpeta.
+
+  - Archivo de configuración. Ir a la ruta
+      cd /etc/nginx/conf.d
+    
+    El archivo que me interesa es default.conf
+
+  - Para ver el archivo de configuración default.conf
+      cat default.conf
+    
+    Hay una configuración de servidor que está escuchando por defecto el puerto 80.
+    También indica donde se guardan los logs.
+    Donde se encuentra la localización del root (/)
+    Páginas de error 50x y su localización
+    etc.
+
+    Vamos a sobreescribir ciertas configuraciones que se encuentran en este nginx server.
+    Estas configuraciones van a ser específicas para la aplicación que necesitamos ejecutar.
+    Al montar la imagen de la aplicación React, ya estará lista para ejecutar.
+
+  - Salir con el comando
+      exit
+
+  - Ahora si, borrar el contenedor
