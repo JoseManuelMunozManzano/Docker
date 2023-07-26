@@ -99,3 +99,67 @@ Nginx
       exit
 
   - Ahora si, borrar el contenedor
+
+03 - Construir la imagen de nuestra aplicación
+----------------------------------------------
+  Necesitamos un hosting para servir archivos html, css, js y assets planos.
+  No necesitamos nada del lado del servidor.
+  Vamos a usar la imagen de nginx, pero no necesitamos usar una imagen de Express con Node.
+
+  - En nuestro proyecto de React creamos un archivo Dockerfile y el archivo .dockerignore
+
+    Nuestro fichero .dockerignore queda:
+      node_modules
+      .git
+      dist
+
+    Nuestro fichero Dockerfile queda:
+
+FROM node:19-alpine3.15 as dev-deps
+WORKDIR /app
+COPY package.json package.json
+RUN yarn install --frozen-lockfile
+
+
+FROM node:19-alpine3.15 as builder
+WORKDIR /app
+COPY --from=dev-deps /app/node_modules ./node_modules
+COPY . .
+# RUN yarn test
+RUN yarn build
+
+
+FROM nginx:1.23.3 as prod
+EXPOSE 80
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+CMD [ "nginx", "-g", "daemon off;" ]
+
+  - Vamos a la carpeta de nuestro proyecto para hacer el build de la imagen
+    Se indica el no-cache para que haga todos los pasos aunque se suponga que están en cache.
+      docker build -t heroes-app . --no-cache
+
+  - Cuando termine podemos ver la imagen creada
+      docker image ls
+
+    Y debemos ver nuestra imagen heroes-app
+
+  - Ejecutemos la aplicación usando nuestra imagen
+    Vamos a dejar los logs porque me interesa verlos
+      docker container run -p 80:80 heroes-app
+
+  - Vamos al navegador web y escribimos
+      localhost
+
+  - Pulsamos el botón login y NO VEMOS NUESTRAS IMAGENES
+    Además si recargamos el navegador web indica un 404 Not Found
+
+    El 404 lo indica porque no le estamos diciendo a nginx que la aplicación de React que estamos ejecutando
+    tiene su propio router.
+    En concreto, si accedemos a la ruta /localhost/marvel y recargamos, como NO EXISTE un index.html en esa ruta, está fallando.
+    Y funciona si accedemos directamente (sin recargar) a /localhost/marvel porque realmente no hemos salido de /localhost
+
+    Para que todo esto funcione tenemos que hacer una configuración adicional en nginx.
+
+  - Pulsamos Ctrl+C para cancelar la ejecución del contenedor.
+  - Borramos el contenedor.
