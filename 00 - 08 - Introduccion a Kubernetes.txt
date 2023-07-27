@@ -56,3 +56,40 @@ Kubernates (K8s)
   automatizada, distribuida y escalable.
 
   La idea al finalizar todo esto es que tengamos una compresión de qué es Kubernetes.
+
+02 - Instalación y configuración de MiniKube
+--------------------------------------------
+  Documentación de MiniKube
+    https://minikube.sigs.k8s.io/docs/
+
+  MiniKube ayuda a las personas que están entrando a aprender Kubernetes a manejarlo y tener una
+  configuración rápidamente.
+  Crea un contenedor que ya viene preconfigurado con Kubernetes para que ahí administremos nuestro
+  cluster.
+  Es como tener un contenedor que tiene un contenedor interno que controla otros contenedores internos.
+
+  - Para la instalación de MniKube, en la página web de documentación de arriba, pulsar en Get Started!
+  - En la parte de Installation seleccionar la arquitectura y el proceso de selección (usando Homebrew)
+  - Seguimos las indicaciones de instalación de la web.
+  - Para sustituir una instalación antigua de MiniKube (fallará la instalación) usando brew:
+      brew unlink minikube
+      brew link minikube
+  - Para confirmar que MiniKube se ha instalado correctamente
+      minikube version
+
+  - Inicializar cluster
+  - Escribir en la consola
+      minikube start
+    
+    Este comando hace varias descargas y la configuración.
+    Crea la imagen, el contenedor y el volumen en Docker.
+
+  - Estos tres apuntes son solo como documentación. No hay que hacerlo.
+  - Para interactuar con MiniKube usar el comando
+      kubectl get po -A
+  - Para interacturar directamente con el cluster dentro de MiniKube
+      minikube kubectl -- get po -A
+  - Si queremos borrar todos los clusters y el contenedor.
+      minikube delete --all
+
+  - Dejamos el contenedor ejecutándose.
