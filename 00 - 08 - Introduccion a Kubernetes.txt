@@ -1,0 +1,58 @@
+Kubernates (K8s)
+
+01 - Introducción
+-----------------
+  Es un administrador (orquestador) de un conjunto grande de contenedores.
+  ¿Qué problemas resuelve y por qué vale la pena utilizarlo?
+  Queremos que las aplicaciones se estén ejecutando 24/7 y que cuando haya que hacer cambios
+  estos puedan hacerse en caliente, también llamado 99.9% uptime.
+  También queremos un sistema tolerante a fallos y que se pueda escalar hacia arriba o abajo según
+  demanda.
+  Esto puede conseguirse usando Kubernetes.
+
+  En esta introducción vamos a hablar de ocho componentes:
+  - Pod: Unidad más básica que tiene Kubernetes. Si tenemos una imagen, el pod sería una capa extra que
+        se coloca sobre esa imagen. De esta manera Kubernetes puede crear réplicas de nuestra imagen y
+        tener contenedores.
+        El Pod indica cuántas réplicas tiene, cual es la dirección IP para poder comunicarse con el...
+        El problema de los contenedores dentro de un pod es que todos tienen una IP volátil.
+        Si cambio una imagen por otra, aun siendo la misma, nos va a dar otra dirección IP.
+        Esto dificulta la comunicación entre la red interna que está creando todo este cluster de pods.
+  - Services: Solucionan el problema de la comunicación entre Pods. Los servicios tienen una dirección
+        IP única, y los contenedores dentro de los pods también. La idea es que el Servicio se conecte 
+        al Pod y yo hago referencia a las direcciones del servicio (y este sabe como comunicarse con el Pod)
+        Ahora, si reemplazamos imágenes dentro del Pod, gracias al Servicio, podemos mantener la
+        comunicación, porque el ciclo de vida del Pod y del Servicio son independientes.
+        Hay dos tipos de servicios:
+          * Internos
+          * Externos
+  - Ingress: Nos permite hacer la comunicación entre nuestro cluster y el mundo exterior, ya que las
+        solicitudes a nuestro sitio web, por ejemplo, entra primero por ingress y este a los respectivos
+        servicios.
+        También va a tener todo lo demás de nuestro cluster protegido y cerrado. Mantiene la seguridad 
+        de nuestras aplicaciones.
+  - Secrets: Es un par key - value. Los secrets nos permiten definir estos pares de valores.
+        Son variables de entorno privadas hacia el exterior, pero visibles en todo mi cluster.
+        Están codificados como un Base64 String.
+        Por defecto, Kubernetes tampoco maneja la encriptación.
+  - ConfigMap: Básicamente son iguales a los Secrets, con la diferencia de que en vez de estar
+        codificados en Base64, son un simple JSON, es decir, están abiertos y todo el mundo
+        puede verlos. Es útil cuando queremos grabar la URL de la BD, un usuario que no es privado.
+        Son variables de entorno públicas.
+  - Volumes: Dado nuestro cluster, los volúmenes serían como discos duros que le vamos conectando
+        para poder tener persistencia de datos. Por defecto, Kubernetes NO mantiene la persistencia
+        de la data.
+  - Deployments: Es un plano de como construir el Pod, como levantarlo, que variables de entorno
+        va a usar, las réplicas que va a tener...
+        Aquí es donde puede escalar arriba o abajo las réplicas.
+        Los Servicios los haremos dentro del Deployment porque suelen ir de la mano, en archivos
+        YAML.
+  - StatefulSet: Es el plano similar a los deployments, pero para bases de datos principalmente.
+        Pero usualmente no se usan configuraciones de la BD en el cluster,
+        porque no es nada sencillo.
+        La información donde se graba la BD suele almacenarse en un servicio especializado de BD.
+  
+  Un cluster es un grupo de nodos que corren aplicaciones en contenedores de una forma eficiente,
+  automatizada, distribuida y escalable.
+
+  La idea al finalizar todo esto es que tengamos una compresión de qué es Kubernetes.

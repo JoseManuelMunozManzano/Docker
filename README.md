@@ -18,5 +18,6 @@ Ver los siguientes .txt para poder seguir este curso en el orden indicado:
 - 00 - 05 -Deployment y registros.txt
 - 00 - 06 - Construcciones automáticas.txt
 - 00 - 07 - nginx.txt
+- 00 - 08 - Introducción a Kubernetes.txt
 
 En estos documentos de texto se van indicando sus proyectos asociados.
