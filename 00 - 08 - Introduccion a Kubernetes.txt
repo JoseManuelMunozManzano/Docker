@@ -136,3 +136,35 @@ data:
   DB_HOST: postgres-service
   # Tiene que ser manejado como un string.
   DB_PORT: '5432'
+
+04 - Secrets
+------------
+  Vamos a tener como secretos el usuario de la BD y el password del usuario root de la BD.
+
+  - Creamos en el raiz de nuestro proyecto el archivo postgres-secrets.yml
+
+  - En la documentación indicada al principio del punto 03, buscar Secrets, y vamos a esta página.
+      https://kubernetes.io/docs/concepts/configuration/secret/
+
+  - Recordar que los valores de los secretos tienen que pasar por un Base64 string encoded.
+      https://codebeautify.org/base64-encode
+  - Otra opción en vez de usar esa web es la siguiente, que funciona en Mac, Linux y PowerShell:
+      echo -n postgres | base64
+
+  - Nuestro archivo postgres-secrets.yml queda de la siguiente manera:
+  
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secrets
+type: Opaque
+data:
+  # Base64 string encoded
+  # https://codebeautify.org/base64-encode
+  # postgres ==> cG9zdGdyZXM=
+  DB_USER: cG9zdGdyZXM=
+  # EstoEsUnPassWordSecreto ==>  RXN0b0VzVW5QYXNzV29yZFNlY3JldG8=
+  DB_PASSWORD: RXN0b0VzVW5QYXNzV29yZFNlY3JldG8=
+
+  IMPORTANTE: Muchas personas lo que hacen con los archivos de configuración de Kubernetes, es subirlos
+  a un repositorio para darle seguimiento del mismo.
