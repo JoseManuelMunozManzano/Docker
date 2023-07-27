@@ -93,3 +93,46 @@ Kubernates (K8s)
       minikube delete --all
 
   - Dejamos el contenedor ejecutándose.
+
+03 - ConfigMap
+--------------
+  Vamos a trabajar en el proyecto 14-k8s-teslo
+
+  Va a ser todo un cluster de Kubernetes para el manejo de nuestra aplicación de Teslo. Es una API
+  y vamos a instalar postgres y PgAdmin.
+
+  También tener en cuenta esta documentación de Kubernetes.
+    https://kubernetes.io/es/docs/concepts/
+  Hay snippets de código que vamos a usar en este proyecto.
+
+  Vamos a empezar por lo que menos configuraciones tiene. Vamos a ocupar una BD Postgres.
+  En la vida real usaríamos un servicio o aprovisionaríamos una BD en la nube y haríamos la
+  conexión mediante una cadena de conexión.
+
+  - Creamos en la carpeta 14-k8s-teslo el archivo
+      postgres-config.yml
+
+    El objetivo es crear nuestro ConfigMap con las variables de entorno públicas que se van a compartir
+    a lo largo de mi aplicación.
+
+  - En la documentación buscar ConfigMap y vamos a esta página.
+      https://kubernetes.io/docs/concepts/configuration/configmap/
+   
+    Cogemos el snippet de como luce un ConfigMap y lo pegamos a nuestro archivo postgres-config.yml. Tras los cambios queda:
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # Este es el nombre del archivo de configuración que realmente importa,
+  # no el nombre que le hemos puesto al archivo.
+  # Este nombre lo usaré luego para hacer referencia a mis key-values pairs
+  name: postgres-config
+data:
+  DB_NAME: postgres
+  # DB_HOST es el nombre del servidor donde esta el servicio de la BD.
+  # Todavía no lo tenemos definido, y eso es correcto, pero sabemos que lo vamos a tener
+  # dentro de algo que se llama postgres-service. Recordar que un servicio ya tiene una
+  # dirección de IP fija
+  DB_HOST: postgres-service
+  # Tiene que ser manejado como un string.
+  DB_PORT: '5432'
