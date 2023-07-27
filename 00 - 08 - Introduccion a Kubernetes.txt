@@ -152,7 +152,7 @@ data:
       echo -n postgres | base64
 
   - Nuestro archivo postgres-secrets.yml queda de la siguiente manera:
-  
+
 apiVersion: v1
 kind: Secret
 metadata:
@@ -168,3 +168,72 @@ data:
 
   IMPORTANTE: Muchas personas lo que hacen con los archivos de configuración de Kubernetes, es subirlos
   a un repositorio para darle seguimiento del mismo.
+
+05 - Pods, Services y Deployments
+---------------------------------
+  Lo normal es crear un deployment que ya viene con la configuración del Pod.
+
+  - Creamos en el raiz de nuestro proyecto el archivo postgres.yml
+
+  - En la documentación indicada al principio del punto 03, buscar Deployments, y vamos a esta página.
+      https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+
+  - En la documentación indicada al principio del punto 03, buscar Services, y vamos a esta página.
+      https://kubernetes.io/es/docs/concepts/services-networking/service/
+
+  - Cogemos los snippet de como luce un Deployment y un Service y los pegamos a nuestro archivo postgres.yml y los modificamos a nuestro gusto. Queda:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  labels:
+    app: postgres
+# La definición de nuestro Pod vienen en este spec
+spec:
+  # Copias de nuestro Pod
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    # Este spec es la definición de los contenedores que vamos a querer montar y sus
+    # respectivas variables de entorno.
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15.1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              # Obteniendo el valor de mi fichero postgres-secrets.yml
+              # Se indica el nombre de la variable de entorno y de donde la obtiene.
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: DB_PASSWORD
+# Estos --- es para indicar que voy a empezar un nuevo archivo aquí abajo
+# Vamos con el servicio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # Este nombre de servicio es el que pusimos en el archivo postgres-config.yml en DB_HOST
+  # Va a permitir conectarse a la BD indicada en la parte del Deployment
+  name: postgres-servicio
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      # port puede ser cualquier puerto. Todo el mundo fuera de este servicio va a tener que
+      # utilizar ese port para conectarse al puerto 5432 de targetPort que está enlazado con
+      # el container en la parte del Deployment.
+      # Usualmente se suele indicar en port el mismo puerto que es necesario tener en targetPort
+      port: 5432
+      # El puerto que se va a conectar con el containerPort indicado en la parte Deployment.
+      targetPort: 5432
