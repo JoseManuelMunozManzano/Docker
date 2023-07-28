@@ -94,6 +94,9 @@ Kubernates (K8s)
 
   - Dejamos el contenedor ejecutándose.
 
+  - NOTA: Aplicación de consola gráfica que puede ser interesante ver.
+      https://k9scli.io/
+
 03 - ConfigMap
 --------------
   Vamos a trabajar en el proyecto 14-k8s-teslo
@@ -277,3 +280,80 @@ spec:
       kubectl logs pod/postgres-deployment-6475d989b5-g4gdx
 
     Ahí ya indica que la BD ya está lista para recibir conexiones.
+
+07 - Agregar PGAdmin al cluster
+-------------------------------
+  - Vamos a instalar el servicio de PGAdmin para poder administrar la BD
+    En concreto, en DockerHub buscaremos la imagen dpage/pgadmin4
+      https://hub.docker.com/r/dpage/pgadmin4
+  
+  - Copiamos nuestro archivo postgres-secrets.yml y creamos uno nuevo con nombre pg-admin-secrets.yml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pg-admin-secrets
+type: Opaque
+data:
+  # Base64 string encoded
+  # echo -n superman@google.com | base64
+  PG_USER_EMAIL: c3VwZXJtYW5AZ29vZ2xlLmNvbQ==
+  # EstoEsUnPassWordSecreto ==>  RXN0b0VzVW5QYXNzV29yZFNlY3JldG8=
+  PG_PASSWORD: RXN0b0VzVW5QYXNzV29yZFNlY3JldG8=
+
+  - Creamos un archivo nuevo llamado pg-admin.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg-admin-deployment
+  labels:
+    app: pg-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pg-admin
+  template:
+    metadata:
+      labels:
+        app: pg-admin
+    spec:
+      containers:
+        - name: pg-admin
+          image: dpage/pgadmin4:6.17
+          ports:
+            # https://hub.docker.com/layers/dpage/pgadmin4/6.17/images/sha256-b04d64352af918043489fca0d95f2a87480238ac5d071fcafd24d6a38f18389d?context=explore
+            # Aquí vemos que se exponen los puertos 443 o 80
+            - containerPort: 80
+          env:
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-admin-secrets
+                  key: PG_PASSWORD
+            - name: PGADMIN_DEFAULT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: pg-admin-secrets
+                  key: PG_USER_EMAIL
+            - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+              value: 'false'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pg-admin-servicio
+spec:
+  # Necesitamos exponer el targetPort al mundo exterior para poder hacer la parte del Ingress.
+  # NodePort nos permite colocar esa comunicación externa.
+  type: NodePort
+  selector:
+    app: pg-admin
+  ports:
+    - protocol: TCP
+      port: 80 # cualquier puerto
+      targetPort: 80
+      # El puerto del NodePort debe estar entre el 30000 y el 32767
+      # Esta en la documentación: https://kubernetes.io/es/docs/concepts/services-networking/service/
+      nodePort: 30200
