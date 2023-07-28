@@ -237,3 +237,43 @@ spec:
       port: 5432
       # El puerto que se va a conectar con el containerPort indicado en la parte Deployment.
       targetPort: 5432
+
+06 - Desplegar la BD en el cluster
+----------------------------------
+  - Nos vamos a la carpeta del proyecto.
+    Tenemos que tener corriendo el contenedor minikube
+
+  - Para ver la versión de kubectl
+      kubectl version
+
+  - Para verificar
+      kubectl get all
+    Si da algún error es porque algo pasa con el contenedor. Borrarlo y regenerarlo con:
+      minikube start
+
+  - Vamos a ejecutar los archivos yaml de configuración dentro de nuestro cluster.
+    Técnicamente no importa el orden siempre y cuando no haya dependencias.
+    Vamos a empezar con el fichero postgres-config.yml, luego postgres-secrets.yml y por último postgres.yml
+
+      kubectl apply -f postgres-config.yml
+      kubectl apply -f postgres-secrets.yml
+      kubectl apply -f postgres.yml
+
+  - Volvemos a ejecutar la verificación de pods, services y deployments.
+    Lo importante es que aparezcan con READY con valor 1/1
+    Esperar un poco y volver a probar el mandato. Se tiene que descargar la imagen, hacer la configuración
+    y se levantó la BD, y eso lleva cierto tiempo.
+      kubectl get all
+
+  - ¿Cómo saber si algo fue mal?
+    Para ver información, tenemos que copiar el nombre (es bastante largo) y ejecutar el mandato
+      kubectl describe deployment.apps/postgres-deployment
+
+    Esto nos da información sobre el Pod, la cantidad de réplicas, puertos, variables de entorno (secretos)
+    Para saber que todo está bien, al final indica Type. Si su valor es Normal entonces todo va bien.
+    Por desgracia no hay mucha información.
+
+  - Para ver los logs, se hace sobre el pod, no sobre el deployment.
+      kubectl logs pod/postgres-deployment-6475d989b5-g4gdx
+
+    Ahí ya indica que la BD ya está lista para recibir conexiones.
