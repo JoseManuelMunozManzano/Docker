@@ -415,9 +415,9 @@ spec:
     Intentar crear la conexión a la base de datos (ver postgres-secrets.yml y postgres.yml)
       Click en Servers
       Click en Register > Server
-      Colocar el nombre de: "HeroesDB" (el nombre no importa)
+      Colocar el nombre de: "tesloDB" (el nombre no importa)
       Ir a la pestaña de connection
-      Colocar el hostname "postgres-servicio" (el mismo nombre que le dimos al service)
+      Colocar el hostname "postgres-service" (el mismo nombre que le dimos al service)
       Username es "postgres" y el password: EstoEsUnPassWordSecreto
       Probar la conexión      
 
@@ -563,3 +563,52 @@ spec:
 
     Y ya está, esperamos un poco a que actualice todo y listo.
       kubectl get all
+
+11 - Probar backend y limpieza
+------------------------------
+  - Miramos todo lo desplegado
+      kubectl get all
+  
+  - Buscamos el servicio del backend y ejecutamos
+      minikube service backend-servicio
+
+  - En el navegador se abre la web y cambiamos la url a
+      http://127.0.0.1:50164/api
+    
+    Se abre Swagger.
+
+  - Buscamos la parte donde dice Seed y lo ejecutamos para confirmar que se carga
+    información en la BD.
+      Debería aparecer SEED EXECUTED
+  
+  - Vamos ahora a hacer el GET de los productos.
+      Y deberían aparecer todos los productos.
+
+  - Cancelamos en la terminal la app del backend con Ctrl+C
+
+  - Podemos probar ahora el PGAdmin
+      kubectl get all
+
+      minikube service pg-admin-servicio
+
+    Nos abre automáticamente la web de pgAdmin en el navegador.
+    Indicar en login lo que tenemos en pg-admin-secrets.yml
+
+      superman@google.com
+      EstoEsUnPassWordSecreto
+
+    Intentar crear la conexión a la base de datos (ver postgres-secrets.yml y postgres.yml)
+      Click en Servers
+      Click en Register > Server
+      Colocar el nombre de: "tesloDB" (el nombre no importa)
+      Ir a la pestaña de connection
+      Colocar el hostname "postgres-service" (el mismo nombre que le dimos al service)
+      Username es "postgres" y el password: EstoEsUnPassWordSecreto
+      
+      Accedemos a la conexión y vamos a tesloDB/postgres/Schemas/Tables
+      Y veremos nuestras tablas con la información que se ha añadido desde el Swagger.
+
+  - En la terminal podemos salir con Ctrl+C para terminar.
+
+  - Y para hacer la limpieza de minikube para recuperar todo el espacio.
+      minikube delete --all
