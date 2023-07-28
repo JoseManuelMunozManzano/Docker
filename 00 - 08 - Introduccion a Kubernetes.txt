@@ -227,7 +227,7 @@ kind: Service
 metadata:
   # Este nombre de servicio es el que pusimos en el archivo postgres-config.yml en DB_HOST
   # Va a permitir conectarse a la BD indicada en la parte del Deployment
-  name: postgres-servicio
+  name: postgres-service
 spec:
   selector:
     app: postgres
@@ -447,4 +447,119 @@ data:
   # echo -n estoEsMiSecretDeK8s | base64
   JWT_SECRET: ZXN0b0VzTWlTZWNyZXREZUs4cw==
 
-  - Hacemos un nuevo archivo de deployment copiado de pg-admin.yml. Lo llamamos backend.yml
+  - Hacemos un nuevo archivo de deployment copiado de pg-admin.yml. Lo llamamos backend.yml y queda:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: klerith/k8s-teslo-backend:1.1.0
+          ports:
+            - containerPort: 3000
+          env:
+            # Estas variables de entorno están en la descripción de la imagen
+            # https://hub.docker.com/r/klerith/k8s-teslo-backend
+            # El HOST_API es el único que no hace falta configurar aquí.
+            - name: APP_VERSION
+              value: '1.1.0'
+            # Este puerto tiene que ser el mismo que se ve arriba en containerPort
+            - name: PORT
+              value: '3000'
+            - name: STAGE
+              value: 'prod'
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: DB_NAME
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: DB_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: JWT_SECRET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-servicio
+spec:
+  type: NodePort
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 3000 # cualquier puerto, pero mejor indicar el de la variable de entorno
+      targetPort: 3000
+      nodePort: 30300
+
+10 - Desplegar Backend al cluster
+---------------------------------
+  - Para desplegar, primero vamos a revisar si tenemos todo arriba.
+      kubectl get all
+
+  - Aplicamos los secretos
+      kubectl apply -f backend-secrets.yml
+
+  - Aplicamos el backend
+      kubectl apply -f backend.yml
+
+  - Revisamos si lo tenemos todo arriba (tarda un poco)
+      kubectl get all
+
+  - Independientemente de que nos funcione, siempre es bueno ver el describe del deployment, en este
+    caso del backend.
+      kubectl describe deployment.apps/backend-deployment
+
+    También se puede hacer un describe del Pod, por ejemplo
+      kubectl describe pod/backend-deployment-6b6d744f48-5zwt7
+
+  - Vamos a hacer el log de una de las dos réplicas del Pod del backend
+    Con el -f se siguen los logs
+      kubectl logs pod/backend-deployment-6b6d744f48-htdsl 
+
+  - Si necesitáramos cambiar nuestro JWT_SECRET porque se hubiera comprometido, vamos
+    al archivo backend-secrets.yml, lo cambiamos y ejecutaríamos:
+      kubectl apply -f backend-secrets.yml
+    
+    Y después rearrancamos el deployment que queremos (si no se indica se rearranca todo)
+    Esto es porque hemos cambiado una variable de entorno.
+    Hay ciertos cambios en los que no hace falta hacer esto manualmente, como en un deployment,
+    pero como el cambio fue en un secret hay que actualizarlo con un rollout.
+      kubectl rollout restart deployment backend-deployment
+
+    Y ya está, esperamos un poco a que actualice todo y listo.
+      kubectl get all

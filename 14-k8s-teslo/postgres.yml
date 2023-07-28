@@ -39,7 +39,7 @@ kind: Service
 metadata:
   # Este nombre de servicio es el que pusimos en el archivo postgres-config.yml en DB_HOST
   # Va a permitir conectarse a la BD indicada en la parte del Deployment
-  name: postgres-servicio
+  name: postgres-service
 spec:
   selector:
     app: postgres
