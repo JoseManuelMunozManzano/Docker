@@ -422,3 +422,29 @@ spec:
       Probar la conexión      
 
   - Para terminar la comunicación con minikube, en el terminal pulsar Ctrl+C
+
+09 - Agregar el BackendApp al Cluster
+-------------------------------------
+  - Vamos a agregar la imagen del backend
+      https://hub.docker.com/r/klerith/k8s-teslo-backend
+
+  - Vamos a usar la versión 1.1.0
+    NOTA: Siempre es mejor usar una versión concreta en vez del latest, porque pueden que la hayan
+    cambiado e introduzca breaking changes.
+
+  - Necesitamos un secret nuevo para el JWT_SECRET
+
+  - Nos vamos a la carpeta de nuestro proyecto y copiamos el archivo pg-admin-secrets.yml y lo
+    renombramos a backend-secrets.yml y lo dejamos así:
+  
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+type: Opaque
+data:
+  # Base64 string encoded
+  # echo -n estoEsMiSecretDeK8s | base64
+  JWT_SECRET: ZXN0b0VzTWlTZWNyZXREZUs4cw==
+
+  - Hacemos un nuevo archivo de deployment copiado de pg-admin.yml. Lo llamamos backend.yml
