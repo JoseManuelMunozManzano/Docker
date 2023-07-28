@@ -357,3 +357,68 @@ spec:
       # El puerto del NodePort debe estar entre el 30000 y el 32767
       # Esta en la documentación: https://kubernetes.io/es/docs/concepts/services-networking/service/
       nodePort: 30200
+
+08 - Desplegar PGAdmin al cluster
+---------------------------------
+  - Añadimos PgAdmin al cluster
+      kubectl apply -f pg-admin-secrets.yml
+      kubectl apply -f pg-admin.yml
+
+  - Vemos como va todo. Lo importante es que aparezcan con READY con valor 1/1
+      kubectl get all
+
+  - Depurar el deployment
+      kubectl describe pod/pg-admin-deployment-6894bfd99d-dp5v4
+
+  - Si volvemos a ver como va todo, veremos que ahora READY indica 0/1 con un STATUS CrashLoopBackOff
+      kubectl get all
+
+  - Si vemos los logs para buscar el error
+      kubectl logs pod/pg-admin-deployment-6894bfd99d-dp5v4
+
+    Vemos:
+    
+      NameError: name 'false' is not defined. Did you mean: 'False'?
+      usage: gunicorn [OPTIONS] [APP_MODULE]
+      gunicorn: error: argument -t/--timeout: invalid int value: ''
+
+    Corregimos el error:
+        - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+          value: 'False'    
+
+  - Tenemos que volver a aplicar lo que cambió.
+      kubectl apply -f pg-admin.yml
+    
+    Cambia el name, cuidado!
+
+  - Vemos como va todo. Lo importante es que aparezcan con READY con valor 1/1
+      kubectl get all
+
+  - Si vemos los logs vemos que ahora todo está correcto
+      kubectl logs pod/pg-admin-deployment-76ffd4ff94-z9dkz
+
+  - Técnicamente ya está todo expuesto al mundo exterior. 
+    Esto sería todo y podríamos acceder a la web usando el puerto 30200.
+  
+    PERO!!! Como todo está corriendo dentro de nuestro contenedor minikube tenemos
+    que exponer ese contenedor (el servicio) a mi computadora.
+      kubectl get all
+
+      minikube service pg-admin-servicio 
+
+    Nos abre automáticamente la web de pgAdmin en el navegador.
+    Indicar en login lo que tenemos en pg-admin-secrets.yml
+
+      superman@google.com
+      EstoEsUnPassWordSecreto
+
+    Intentar crear la conexión a la base de datos (ver postgres-secrets.yml y postgres.yml)
+      Click en Servers
+      Click en Register > Server
+      Colocar el nombre de: "HeroesDB" (el nombre no importa)
+      Ir a la pestaña de connection
+      Colocar el hostname "postgres-servicio" (el mismo nombre que le dimos al service)
+      Username es "postgres" y el password: EstoEsUnPassWordSecreto
+      Probar la conexión      
+
+  - Para terminar la comunicación con minikube, en el terminal pulsar Ctrl+C
